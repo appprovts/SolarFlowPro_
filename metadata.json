@@ -1,0 +1,8 @@
+{
+  "name": "SolarFlow Pro",
+  "description": "Sistema avançado de gerenciamento de projetos fotovoltaicos, desde a vistoria técnica inicial até o comissionamento final, com automação de documentos e dashboard analítico.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
