@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { SurveyData, Project } from '../types';
 
 interface SurveyFormProps {
@@ -20,6 +20,9 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
     photos: []
   });
 
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (readOnly) return;
@@ -34,6 +37,52 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
         coordinates: { lat: pos.coords.latitude, lng: pos.coords.longitude }
       });
     });
+  };
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files || readOnly) return;
+    
+    const newPhotos: string[] = [...formData.photos];
+    Array.from(files).forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            newPhotos.push(e.target.result as string);
+            setFormData(prev => ({ ...prev, photos: [...newPhotos] }));
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (readOnly) return;
+    setIsDragging(true);
+  };
+
+  const onDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (readOnly) return;
+    handleFiles(e.dataTransfer.files);
+  };
+
+  const removePhoto = (index: number) => {
+    if (readOnly) return;
+    const newPhotos = formData.photos.filter((_, i) => i !== index);
+    setFormData({ ...formData, photos: newPhotos });
+  };
+
+  const triggerFileInput = () => {
+    if (readOnly) return;
+    fileInputRef.current?.click();
   };
 
   return (
@@ -112,6 +161,61 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
               ? `Latitude: ${formData.coordinates.lat.toFixed(6)}, Longitude: ${formData.coordinates.lng.toFixed(6)}`
               : 'Nenhuma localização capturada.'}
           </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-slate-700 mb-1">Fotos do Local</label>
+          
+          <input 
+            type="file" 
+            multiple 
+            accept="image/*" 
+            className="hidden" 
+            ref={fileInputRef} 
+            onChange={(e) => handleFiles(e.target.files)}
+          />
+
+          {!readOnly && (
+            <div 
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              onClick={triggerFileInput}
+              className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl transition cursor-pointer ${
+                isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-300 hover:border-blue-400'
+              }`}
+            >
+              <div className="space-y-1 text-center">
+                <i className={`fas fa-camera text-3xl mb-2 ${isDragging ? 'text-blue-500' : 'text-slate-400'}`}></i>
+                <div className="flex text-sm text-slate-600">
+                  <span className="relative font-medium text-blue-600 hover:text-blue-500">
+                    Clique para upload
+                  </span>
+                  <p className="pl-1 text-slate-500">ou arraste as fotos aqui</p>
+                </div>
+                <p className="text-xs text-slate-500">PNG, JPG até 10MB</p>
+              </div>
+            </div>
+          )}
+
+          {formData.photos.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {formData.photos.map((photo, index) => (
+                <div key={index} className="relative group aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                  <img src={photo} alt={`Local ${index}`} className="w-full h-full object-cover" />
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removePhoto(index); }}
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-md"
+                    >
+                      <i className="fas fa-times text-xs"></i>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

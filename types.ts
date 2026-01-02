@@ -21,6 +21,16 @@ export enum ProjectStatus {
   CONCLUIDO = 'Concluído'
 }
 
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning';
+  timestamp: Date;
+  isRead: boolean;
+  projectId?: string;
+}
+
 export interface SurveyData {
   roofType: string;
   azimuth: number;

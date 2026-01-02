@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Project, ProjectStatus, SurveyData, User, UserRole } from '../types';
+import { Project, ProjectStatus, SurveyData, User, UserRole, Notification } from '../types';
 import { STATUS_COLORS, STATUS_ICONS } from '../constants';
 import SurveyForm from './SurveyForm';
 import { analyzeSurvey, generateTechnicalMemorial } from '../services/geminiService';
@@ -10,9 +10,10 @@ interface ProjectDetailsProps {
   currentUser: User;
   onUpdate: (updated: Project) => void;
   onClose: () => void;
+  onNotify: (n: Omit<Notification, 'id' | 'timestamp' | 'isRead'>) => void;
 }
 
-const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, onUpdate, onClose }) => {
+const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, onUpdate, onClose, onNotify }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'vistoria' | 'documentos'>('info');
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,9 +22,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
   const isIntegrador = currentUser.role === UserRole.INTEGRADOR;
   const isEngenharia = currentUser.role === UserRole.ENGENHARIA;
 
-  // Integrador can only edit survey if status is Vistoria
   const canEditSurvey = isIntegrador && project.status === ProjectStatus.VISTORIA;
-  // Engineering can see everything and edit everything
   const canPerformAnalysis = isEngenharia && project.status === ProjectStatus.AGUARDANDO_ANALISE;
   const canAdvanceStatus = isEngenharia && project.status !== ProjectStatus.AGUARDANDO_ANALISE && project.status !== ProjectStatus.CONCLUIDO;
 
@@ -36,6 +35,14 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
     };
     onUpdate(updatedProject);
     setLoading(false);
+    
+    onNotify({
+      title: 'Vistoria Enviada',
+      message: `O integrador enviou os dados de campo para o projeto: ${project.clientName}.`,
+      type: 'success',
+      projectId: project.id
+    });
+    
     alert("Vistoria enviada para análise da engenharia!");
   };
 
@@ -46,6 +53,13 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
       const result = await analyzeSurvey(project.surveyData, project);
       setAnalysis(result);
       onUpdate({ ...project, status: ProjectStatus.ANALISE });
+      
+      onNotify({
+        title: 'Análise de IA Concluída',
+        message: `O parecer técnico automatizado foi gerado para ${project.clientName}.`,
+        type: 'info',
+        projectId: project.id
+      });
     } catch (err) {
       console.error(err);
     } finally {
@@ -58,13 +72,28 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
     const text = await generateTechnicalMemorial(project);
     setMemorial(text);
     setLoading(false);
+    
+    onNotify({
+      title: 'Documento Gerado',
+      message: `Memorial descritivo gerado com sucesso para ${project.clientName}.`,
+      type: 'success',
+      projectId: project.id
+    });
   };
 
   const advanceStatus = () => {
     const statuses = Object.values(ProjectStatus);
     const currentIndex = statuses.indexOf(project.status);
     if (currentIndex < statuses.length - 1) {
-      onUpdate({ ...project, status: statuses[currentIndex + 1] });
+      const newStatus = statuses[currentIndex + 1];
+      onUpdate({ ...project, status: newStatus });
+      
+      onNotify({
+        title: 'Status Atualizado',
+        message: `O projeto ${project.clientName} avançou para a fase: ${newStatus}.`,
+        type: 'info',
+        projectId: project.id
+      });
     }
   };
 
