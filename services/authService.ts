@@ -25,6 +25,7 @@ export const signIn = async (email: string, password: string): Promise<{ user: U
 };
 
 export const signUp = async (email: string, password: string, name: string, role: UserRole): Promise<{ user: User | null; error: any }> => {
+    console.log('Iniciando cadastro para:', email);
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -36,9 +37,19 @@ export const signUp = async (email: string, password: string, name: string, role
         }
     });
 
-    if (error) return { user: null, error };
+    if (error) {
+        console.error('Erro no cadastro Supabase:', error);
+        return { user: null, error };
+    }
 
     if (data.user) {
+        console.log('Cadastro realizado com sucesso:', data.user.id);
+
+        // Se a sessão for nula, o Supabase provavelmente requer confirmação de e-mail
+        if (!data.session) {
+            console.warn('Atenção: E-mail de confirmação enviado. O usuário não terá sessão ativa até confirmar.');
+        }
+
         const user: User = {
             id: data.user.id,
             name: name,
@@ -48,7 +59,7 @@ export const signUp = async (email: string, password: string, name: string, role
         return { user, error: null };
     }
 
-    return { user: null, error: new Error('Registration failed') };
+    return { user: null, error: new Error('Ocorreu um erro desconhecido no cadastro') };
 };
 
 export const signOut = async () => {
