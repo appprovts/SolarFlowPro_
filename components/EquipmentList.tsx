@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getEquipment, addEquipment, deleteEquipment, Equipment } from '../services/equipmentService';
+import { getEquipmentSpecs } from '../services/geminiService';
 
 const EquipmentList: React.FC = () => {
     const [items, setItems] = useState<Equipment[]>([]);
@@ -19,9 +20,8 @@ const EquipmentList: React.FC = () => {
     const [isc, setIsc] = useState('13.87');
     const [efficiency, setEfficiency] = useState('21.23');
 
-    // Inverter Technical Specs
     const [inverterSpecs, setInverterSpecs] = useState({
-        // PV Input
+        // Entrada FV
         pvMaxPower: '7500 Wp',
         pvMaxVoltage: '550 V',
         mpptVoltageRange: '40 V a 530 V / 380 V',
@@ -29,14 +29,14 @@ const EquipmentList: React.FC = () => {
         mpptCount: '2 / 1',
         maxMpptCurrent: '16 A',
         maxShortCircuitCurrent: '20 A',
-        // Battery
+        // Bateria
         batteryNominalVoltage: '48 V / 51.2 V',
         batteryVoltageRange: '40 V a 60 V',
         batteryMaxPower: '5000 W / 5000 W',
         batteryMaxCurrent: '100 A / 100A',
         batteryType: 'LiFePO4',
         batteryModel: 'Aiswei Ai-LB*3',
-        // AC Output
+        // Saída CA
         acVoltageRange: '180 V a 280 V / 230 V',
         acFrequency: '50 Hz / 60 Hz',
         acFrequencyRange: '50 Hz ± 5Hz / 60 Hz ± 5Hz',
@@ -45,33 +45,70 @@ const EquipmentList: React.FC = () => {
         acNominalCurrent: '21.7 A / 26.1 A',
         acMaxCurrent: '22.7 A / 27.3 A',
         acThd: '< 3%',
-        // AC Input
-        acInputVoltage: '230V',
-        acInputFreq: '50Hz / 60Hz',
-        acInputNominalApparent: '6000 VA',
+        // Entrada CA
+        acInputNominalVoltage: '230 V',
+        acInputNominalFreq: '50 Hz / 60 Hz',
         acInputMaxApparent: '6000 VA',
-        acInputNominalCurrent: '26.1 A',
         acInputMaxCurrent: '27.3 A',
-        // EPS Output
+        // Saída EPS
         epsNominalVoltage: '230 V',
         epsNominalFreq: '50 Hz / 60 Hz',
         epsNominalApparent: '5000 VA',
-        epsMaxApparent: '5000 VA',
-        epsPeakApparent: '7500 VA, 10s',
-        epsNominalCurrent: '21.7 A',
-        epsMaxCurrent: '21.7 A',
+        epsPeakPower: '7500 VA, 10s',
         epsSwitchTime: '≤ 10 ms',
         epsThdi: '< 3 %',
-        // Efficiency
+        // Eficiência
         effMppt: '99.90 %',
         effEuroMax: '97 % / 97.6 %',
         effBatteryCharge: '94.70 %',
-        // General
+        // Geral
         dimensions: '494 / 420 / 195 mm',
         weight: '21.5 kg',
         protection: 'IP66',
-        communication: 'WIFI, RS485, CAN'
+        securities: 'Desconexão CC, Polaridade Reversa, Fuga, Anti-ilhamento, Falha Aterramento, Sobretensão CA',
+        ui: 'LED & App',
+        commBms: 'RS485 / CAN',
+        commMeter: 'RS485',
+        commMonitor: 'WIFI module',
+        control: 'Exportação Zero'
     });
+
+    const [aiLoading, setAiLoading] = useState(false);
+
+    const handleAIFill = async () => {
+        if (!brand || !model) {
+            alert('Por favor, preencha Marca e Modelo primeiro.');
+            return;
+        }
+
+        setAiLoading(true);
+        try {
+            const data = await getEquipmentSpecs(brand, model, type as 'Módulo' | 'Inversor');
+            if (data) {
+                if (type === 'Módulo') {
+                    setPmax(data.pmax || '');
+                    setTolerance(data.tolerance || '');
+                    setVmp(data.vmp || '');
+                    setImp(data.imp || '');
+                    setVoc(data.voc || '');
+                    setIsc(data.isc || '');
+                    setEfficiency(data.efficiency || '');
+                } else {
+                    setInverterSpecs({
+                        ...inverterSpecs,
+                        ...data
+                    });
+                }
+            } else {
+                alert('Não foi possível encontrar especificações para este modelo.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao buscar dados com IA.');
+        } finally {
+            setAiLoading(false);
+        }
+    };
 
     const fetchItems = async () => {
         try {
@@ -157,16 +194,32 @@ const EquipmentList: React.FC = () => {
                                 onChange={(e) => setBrand(e.target.value)}
                             />
                         </div>
-                        <div>
+                        <div className="flex flex-col">
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Modelo</label>
-                            <input
-                                type="text"
-                                required
-                                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-amber-400 outline-none"
-                                placeholder="Ex: CS6W-550MS"
-                                value={model}
-                                onChange={(e) => setModel(e.target.value)}
-                            />
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    required
+                                    className="flex-1 px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-amber-400 outline-none"
+                                    placeholder="Ex: CS6W-550MS"
+                                    value={model}
+                                    onChange={(e) => setModel(e.target.value)}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleAIFill}
+                                    disabled={aiLoading}
+                                    className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg font-bold hover:bg-amber-200 transition flex items-center gap-2 whitespace-nowrap text-xs"
+                                    title="Preencher com Inteligência Artificial"
+                                >
+                                    {aiLoading ? (
+                                        <i className="fas fa-spinner fa-spin"></i>
+                                    ) : (
+                                        <i className="fas fa-magic"></i>
+                                    )}
+                                    {aiLoading ? 'Buscando...' : 'IA'}
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Tipo</label>
@@ -224,6 +277,29 @@ const EquipmentList: React.FC = () => {
                                 <InverterStateField label="Potência máx. aparente" field="acMaxApparentPower" state={inverterSpecs} setState={setInverterSpecs} />
                                 <InverterStateField label="Corrente saída nominal" field="acNominalCurrent" state={inverterSpecs} setState={setInverterSpecs} />
                                 <InverterStateField label="Corrente saída máx." field="acMaxCurrent" state={inverterSpecs} setState={setInverterSpecs} />
+                            </div>
+
+                            <h4 className="text-sm font-bold text-slate-900 border-l-4 border-amber-400 pl-3">Entrada CA</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl">
+                                <InverterStateField label="Tensão nominal rede" field="acInputNominalVoltage" state={inverterSpecs} setState={setInverterSpecs} />
+                                <InverterStateField label="Frequência nominal" field="acInputNominalFreq" state={inverterSpecs} setState={setInverterSpecs} />
+                                <InverterStateField label="Potência máx. aparente" field="acInputMaxApparent" state={inverterSpecs} setState={setInverterSpecs} />
+                                <InverterStateField label="Corrente máx. entrada" field="acInputMaxCurrent" state={inverterSpecs} setState={setInverterSpecs} />
+                            </div>
+
+                            <h4 className="text-sm font-bold text-slate-900 border-l-4 border-amber-400 pl-3">Saída EPS e Segurança</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl">
+                                <InverterStateField label="Potência pico EPS" field="epsPeakPower" state={inverterSpecs} setState={setInverterSpecs} />
+                                <InverterStateField label="Tempo de troca" field="epsSwitchTime" state={inverterSpecs} setState={setInverterSpecs} />
+                                <InverterStateField label="Proteções Integradas" field="securities" state={inverterSpecs} setState={setInverterSpecs} />
+                            </div>
+
+                            <h4 className="text-sm font-bold text-slate-900 border-l-4 border-amber-400 pl-3">Recursos e Comunicação</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl">
+                                <InverterStateField label="Interface Usuário" field="ui" state={inverterSpecs} setState={setInverterSpecs} />
+                                <InverterStateField label="Comunicação BMS" field="commBms" state={inverterSpecs} setState={setInverterSpecs} />
+                                <InverterStateField label="Módulo Monitoramento" field="commMonitor" state={inverterSpecs} setState={setInverterSpecs} />
+                                <InverterStateField label="Controle Potência" field="control" state={inverterSpecs} setState={setInverterSpecs} />
                             </div>
                         </div>
                     ) : null}
@@ -299,8 +375,16 @@ const EquipmentList: React.FC = () => {
                                                 <p className="text-[9px] font-extrabold text-slate-400 uppercase mt-2 mb-1">Bateria</p>
                                                 <SpecItem label="Tensão Bateria" value={item.specs.batteryNominalVoltage} />
                                                 <SpecItem label="Modelo Bateria" value={item.specs.batteryModel} />
+                                                <p className="text-[9px] font-extrabold text-slate-400 uppercase mt-2 mb-1">Entrada CA</p>
+                                                <SpecItem label="Tensão Nominal" value={item.specs.acInputNominalVoltage} />
+                                                <SpecItem label="Corrente Máx. Entrada" value={item.specs.acInputMaxCurrent} />
                                                 <p className="text-[9px] font-extrabold text-slate-400 uppercase mt-2 mb-1">Saída EPS</p>
-                                                <SpecItem label="Saída EPS" value={item.specs.epsNominalApparent} />
+                                                <SpecItem label="Potência Pico" value={item.specs.epsPeakPower} />
+                                                <SpecItem label="Tempo de Troca" value={item.specs.epsSwitchTime} />
+                                                <p className="text-[9px] font-extrabold text-slate-400 uppercase mt-2 mb-1">Segurança e Recursos</p>
+                                                <SpecItem label="Proteções" value={item.specs.securities} />
+                                                <SpecItem label="Comunicação" value={item.specs.commBms} />
+                                                <SpecItem label="Monitoramento" value={item.specs.commMonitor} />
                                                 <p className="text-[9px] font-extrabold text-slate-400 uppercase mt-2 mb-1">Geral</p>
                                                 <SpecItem label="Dimensões" value={item.specs.dimensions} />
                                                 <SpecItem label="Peso" value={item.specs.weight} />
