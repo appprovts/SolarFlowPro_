@@ -1,6 +1,9 @@
+@import "tailwindcss";
+
 /* SolarFlow Pro Index Styles */
 :root {
-  --primary: #fbbf24; /* amber-400 */
+  --primary: #fbbf24;
+  /* amber-400 */
   --slate-900: #0f172a;
 }
 
