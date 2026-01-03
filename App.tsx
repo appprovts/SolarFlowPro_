@@ -7,6 +7,8 @@ import ProjectDetails from './components/ProjectDetails';
 import Login from './components/Login';
 import NotificationPanel from './components/NotificationPanel';
 import KanbanBoard from './components/KanbanBoard';
+import EquipmentList from './components/EquipmentList';
+import { getCurrentUser, signOut } from './services/authService';
 
 const MOCK_PROJECTS: Project[] = [
   {
@@ -38,38 +40,41 @@ const MOCK_PROJECTS: Project[] = [
     estimatedProduction: 1450,
     startDate: '2023-10-01',
     notes: 'Requer reforço estrutural no telhado.'
-  },
-  {
-    id: '4',
-    clientName: 'Condomínio Alpha',
-    address: 'Al. Rio Negro, 200 - Barueri, SP',
-    status: ProjectStatus.ANALISE,
-    powerKwp: 150.0,
-    estimatedProduction: 18500,
-    startDate: '2023-11-05',
-    notes: 'Análise de viabilidade técnica em andamento.'
-  },
-  {
-    id: '5',
-    clientName: 'Mercado Central',
-    address: 'Praça da Matriz, 10 - Limeira, SP',
-    status: ProjectStatus.SUBMISSAO,
-    powerKwp: 22.5,
-    estimatedProduction: 2800,
-    startDate: '2023-11-10',
-    notes: 'Aguardando aprovação da CPFL.'
   }
 ];
 
-type AppView = 'dashboard' | 'projects' | 'vistorias' | 'engenharia';
+type AppView = 'dashboard' | 'projects' | 'vistorias' | 'engenharia' | 'equipments';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<AppView>('dashboard');
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+      } catch (err) {
+        console.error('Erro ao verificar autenticação:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-amber-400">
+        <i className="fas fa-circle-notch fa-spin text-4xl"></i>
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return <Login onLogin={setCurrentUser} />;
@@ -111,7 +116,7 @@ const App: React.FC = () => {
     };
     setProjects([newProject, ...projects]);
     setSelectedProject(newProject);
-    
+
     addNotification({
       title: 'Novo Projeto Criado',
       message: `O projeto para "Novo Cliente Solar" foi iniciado com sucesso.`,
@@ -119,7 +124,8 @@ const App: React.FC = () => {
     });
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     setCurrentUser(null);
     setView('dashboard');
   };
@@ -132,9 +138,9 @@ const App: React.FC = () => {
         return projects.filter(p => p.status === ProjectStatus.VISTORIA || p.status === ProjectStatus.AGUARDANDO_ANALISE);
       case 'engenharia':
         return projects.filter(p => [
-          ProjectStatus.ANALISE, 
-          ProjectStatus.SUBMISSAO, 
-          ProjectStatus.INSTALACAO, 
+          ProjectStatus.ANALISE,
+          ProjectStatus.SUBMISSAO,
+          ProjectStatus.INSTALACAO,
           ProjectStatus.COMISSIONAMENTO
         ].includes(p.status));
       default:
@@ -148,13 +154,13 @@ const App: React.FC = () => {
       case 'projects': return 'Base de Projetos';
       case 'vistorias': return 'Gestão de Vistorias e Campo';
       case 'engenharia': return 'Pipeline de Engenharia e Obras';
+      case 'equipments': return 'Catálogo de Equipamentos';
       default: return 'SolarFlow Pro';
     }
   };
 
   return (
     <div className="min-h-screen flex bg-slate-50">
-      {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col fixed h-full z-20 shadow-2xl">
         <div className="p-8">
           <div className="flex items-center gap-3 mb-10">
@@ -167,34 +173,42 @@ const App: React.FC = () => {
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 px-4">Menu Principal</p>
           <nav className="space-y-1">
             {isEngenhariaRole && (
-              <SidebarLink 
-                active={view === 'dashboard'} 
-                onClick={() => setView('dashboard')} 
-                icon="fa-columns" 
-                label="Dashboard" 
+              <SidebarLink
+                active={view === 'dashboard'}
+                onClick={() => setView('dashboard')}
+                icon="fa-columns"
+                label="Dashboard"
               />
             )}
-            <SidebarLink 
-              active={view === 'projects'} 
-              onClick={() => setView('projects')} 
-              icon="fa-layer-group" 
-              label="Todos Projetos" 
+            <SidebarLink
+              active={view === 'projects'}
+              onClick={() => setView('projects')}
+              icon="fa-layer-group"
+              label="Todos Projetos"
             />
             <div className="pt-4 mb-2 border-t border-slate-800"></div>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 px-4">Operacional</p>
-            <SidebarLink 
-              active={view === 'vistorias'} 
-              onClick={() => setView('vistorias')} 
-              icon="fa-hard-hat" 
-              label="Vistorias" 
+            <SidebarLink
+              active={view === 'vistorias'}
+              onClick={() => setView('vistorias')}
+              icon="fa-hard-hat"
+              label="Vistorias"
               badge={projects.filter(p => p.status === ProjectStatus.VISTORIA).length}
             />
-            <SidebarLink 
-              active={view === 'engenharia'} 
-              onClick={() => setView('engenharia')} 
-              icon="fa-pencil-ruler" 
-              label="Engenharia" 
+            <SidebarLink
+              active={view === 'engenharia'}
+              onClick={() => setView('engenharia')}
+              icon="fa-pencil-ruler"
+              label="Engenharia"
               badge={projects.filter(p => p.status === ProjectStatus.ANALISE || p.status === ProjectStatus.AGUARDANDO_ANALISE).length}
+            />
+
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-6 mb-4 px-4">Recursos</p>
+            <SidebarLink
+              active={view === 'equipments'}
+              onClick={() => setView('equipments')}
+              icon="fa-tools"
+              label="Equipamentos"
             />
           </nav>
         </div>
@@ -215,7 +229,6 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 ml-64 p-8">
         <header className="flex justify-between items-start mb-8">
           <div>
@@ -226,9 +239,9 @@ const App: React.FC = () => {
               Olá, {currentUser.name}. Gerencie os fluxos de trabalho do sistema.
             </p>
           </div>
-          
+
           <div className="flex items-center gap-4 relative">
-            <button 
+            <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="w-12 h-12 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition relative shadow-sm"
             >
@@ -239,9 +252,9 @@ const App: React.FC = () => {
                 </span>
               )}
             </button>
-            
+
             {showNotifications && (
-              <NotificationPanel 
+              <NotificationPanel
                 notifications={notifications}
                 onClose={() => setShowNotifications(false)}
                 onMarkAsRead={handleMarkAsRead}
@@ -249,8 +262,8 @@ const App: React.FC = () => {
               />
             )}
 
-            {isEngenhariaRole && (
-              <button 
+            {isEngenhariaRole && view !== 'equipments' && (
+              <button
                 onClick={addNewProject}
                 className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-6 py-3 rounded-xl font-bold shadow-lg shadow-amber-400/20 transition flex items-center gap-2"
               >
@@ -262,23 +275,25 @@ const App: React.FC = () => {
         </header>
 
         <div className="animate-in fade-in duration-500">
-          {(view === 'dashboard' && isEngenhariaRole) ? (
+          {view === 'equipments' ? (
+            <EquipmentList />
+          ) : (view === 'dashboard' && isEngenhariaRole) ? (
             <Dashboard projects={projects} />
           ) : view === 'engenharia' ? (
             <KanbanBoard projects={projects} onSelectProject={setSelectedProject} />
           ) : (
-            <ProjectList 
-              projects={getFilteredProjects()} 
-              onSelectProject={setSelectedProject} 
+            <ProjectList
+              projects={getFilteredProjects()}
+              onSelectProject={setSelectedProject}
             />
           )}
         </div>
 
         {selectedProject && (
-          <ProjectDetails 
-            project={selectedProject} 
+          <ProjectDetails
+            project={selectedProject}
             currentUser={currentUser}
-            onUpdate={handleUpdateProject} 
+            onUpdate={handleUpdateProject}
             onClose={() => setSelectedProject(null)}
             onNotify={addNotification}
           />
@@ -289,11 +304,10 @@ const App: React.FC = () => {
 };
 
 const SidebarLink = ({ active, onClick, icon, label, badge }: { active?: boolean; onClick?: () => void; icon: string; label: string; badge?: number }) => (
-  <button 
+  <button
     onClick={onClick}
-    className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all ${
-      active ? 'bg-amber-400 text-slate-900 font-bold shadow-md shadow-amber-400/10' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-    }`}
+    className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-amber-400 text-slate-900 font-bold shadow-md shadow-amber-400/10' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+      }`}
   >
     <div className="flex items-center gap-3">
       <i className={`fas ${icon} w-5 text-center`}></i>
