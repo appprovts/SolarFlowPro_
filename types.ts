@@ -9,6 +9,7 @@ export interface User {
   name: string;
   role: UserRole;
   avatar?: string;
+  phone?: string;
 }
 
 export enum ProjectStatus {

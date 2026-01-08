@@ -8,6 +8,7 @@ import Login from './components/Login';
 import NotificationPanel from './components/NotificationPanel';
 import KanbanBoard from './components/KanbanBoard';
 import EquipmentList from './components/EquipmentList';
+import SurveyList from './components/SurveyList';
 import { getCurrentUser, signOut } from './services/authService';
 
 const MOCK_PROJECTS: Project[] = [
@@ -281,6 +282,11 @@ const App: React.FC = () => {
             <Dashboard projects={projects} />
           ) : view === 'engenharia' ? (
             <KanbanBoard projects={projects} onSelectProject={setSelectedProject} />
+          ) : view === 'vistorias' ? (
+            <SurveyList
+              projects={getFilteredProjects()}
+              onSelectProject={setSelectedProject}
+            />
           ) : (
             <ProjectList
               projects={getFilteredProjects()}

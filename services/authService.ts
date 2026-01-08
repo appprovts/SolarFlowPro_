@@ -24,7 +24,7 @@ export const signIn = async (email: string, password: string): Promise<{ user: U
     return { user: null, error: new Error('No user data') };
 };
 
-export const signUp = async (email: string, password: string, name: string, role: UserRole): Promise<{ user: User | null; error: any }> => {
+export const signUp = async (email: string, password: string, name: string, role: UserRole, phone: string): Promise<{ user: User | null; error: any }> => {
     console.log('Iniciando cadastro para:', email);
     const { data, error } = await supabase.auth.signUp({
         email,
@@ -33,6 +33,7 @@ export const signUp = async (email: string, password: string, name: string, role
             data: {
                 full_name: name,
                 role: role,
+                phone: phone
             }
         }
     });
@@ -54,7 +55,8 @@ export const signUp = async (email: string, password: string, name: string, role
             id: data.user.id,
             name: name,
             role: role,
-            avatar: `https://i.pravatar.cc/150?u=${data.user.id}`
+            avatar: `https://i.pravatar.cc/150?u=${data.user.id}`,
+            phone: phone
         };
         return { user, error: null };
     }
