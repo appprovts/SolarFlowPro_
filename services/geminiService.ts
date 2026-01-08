@@ -33,11 +33,20 @@ export const analyzeSurvey = async (survey: SurveyData, project: Project) => {
     - Consumo Médio: ${survey.averageConsumption} kWh
     
     3. Condições Locais:
-    - Sombreamento: ${survey.shadingIssues} (Período: ${survey.shadingPeriod || 'N/A'})
+    - Sombreamento: ${survey.shadingIssues} (Período: ${survey.shadingPeriod || 'N/A'}, Ângulo: ${survey.shadingAngle || 'N/A'})
     - Facilidade de Acesso: ${survey.accessEase}
     - Segurança: ${survey.safetyConditions}
+
+    4. Equipamentos Existentes:
+    - Tipo: ${survey.existingEquipmentType || 'Nenhum'}
+    - Condição: ${survey.existingEquipmentCondition}
+    - Reutilização Possível: ${survey.structureReusePossible ? 'Sim' : 'Não'}
+
+    5. Dados Ambientais e Cliente:
+    - Irradiação: ${survey.averageIrradiation || 'N/A'} Wh/m²
+    - Objetivo: ${survey.clientObjectives || 'N/A'}
     
-    Forneça uma análise técnica concisa sobre a viabilidade, sugestões de melhoria no layout, adequação do padrão de entrada e alertas de segurança.
+    Forneça uma análise técnica concisa sobre a viabilidade, sugestões de melhoria no layout, adequação dos equipamentos existentes e alertas de segurança.
   `;
 
   try {

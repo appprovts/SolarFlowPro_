@@ -380,16 +380,29 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
             {/* Equipamentos */}
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
               <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Equipamentos Existentes</h4>
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Tipo/Estado de Conservação</label>
-                <textarea
-                  readOnly={readOnly}
-                  rows={2}
-                  className="w-full rounded-xl border-slate-200 bg-white"
-                  value={formData.existingEquipmentCondition}
-                  onChange={(e) => setFormData({ ...formData, existingEquipmentCondition: e.target.value })}
-                  placeholder="Padrão de entrada, disjuntores, fiação..."
-                ></textarea>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de Equipamento</label>
+                  <input
+                    type="text"
+                    readOnly={readOnly}
+                    className="w-full rounded-xl border-slate-200 bg-white"
+                    value={formData.existingEquipmentType || ''}
+                    onChange={(e) => setFormData({ ...formData, existingEquipmentType: e.target.value })}
+                    placeholder="Ex: Inversor antigo, Transformador..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Estado de Conservação</label>
+                  <input
+                    type="text"
+                    readOnly={readOnly}
+                    className="w-full rounded-xl border-slate-200 bg-white"
+                    value={formData.existingEquipmentCondition}
+                    onChange={(e) => setFormData({ ...formData, existingEquipmentCondition: e.target.value })}
+                    placeholder="Ex: Bom, Regular, Oxidado..."
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <input
