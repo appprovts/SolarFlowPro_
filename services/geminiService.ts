@@ -1,10 +1,19 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Project, SurveyData } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialize the API with the key from environment variables
+const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+const genAI = new GoogleGenerativeAI(apiKey);
 
 export const analyzeSurvey = async (survey: SurveyData, project: Project) => {
+  if (!apiKey) {
+    console.error("Gemini API Key is missing");
+    return "Erro: Chave de API do Gemini não configurada. Verifique o arquivo .env.local.";
+  }
+
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
   const prompt = `
     Analise os seguintes dados de vistoria técnica fotovoltaica e forneça recomendações de engenharia:
     Cliente: ${project.clientName}
@@ -14,19 +23,28 @@ export const analyzeSurvey = async (survey: SurveyData, project: Project) => {
     Inclinação: ${survey.inclination}°
     Problemas de Sombreamento: ${survey.shadingIssues}
     Estado do Quadro Elétrico: ${survey.electricalPanelStatus}
-
+    
     Forneça uma análise técnica concisa sobre a viabilidade, sugestões de melhoria no layout e alertas de segurança.
   `;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-  });
-
-  return response.text;
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("Error analyzing survey:", error);
+    return "Erro ao gerar análise. Tente novamente mais tarde.";
+  }
 };
 
 export const generateTechnicalMemorial = async (project: Project) => {
+  if (!apiKey) {
+    console.error("Gemini API Key is missing");
+    return "Erro: Chave de API do Gemini não configurada.";
+  }
+
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+
   const prompt = `
     Gere um rascunho de Memorial Descritivo para submissão à concessionária de energia.
     Dados do Projeto:
@@ -38,24 +56,30 @@ export const generateTechnicalMemorial = async (project: Project) => {
     O documento deve conter: Introdução, Descrição do Sistema, Características Técnicas dos Equipamentos (módulos e inversor), e Proteções. Use um tom profissional e técnico de engenharia elétrica.
   `;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: prompt,
-  });
-
-  return response.text;
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("Error generating memorial:", error);
+    return "Erro ao gerar memorial. Tente novamente mais tarde.";
+  }
 };
 
-export const getEquipmentSpecs = async (brand: string, model: string, type: 'Módulo' | 'Inversor') => {
+export const getEquipmentSpecs = async (brand: string, modelName: string, type: 'Módulo' | 'Inversor') => {
+  if (!apiKey) return null;
+
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json" } });
+
   const prompt = `
     Aja como um engenheiro fotovoltaico especialista. 
-    Retorne APENAS um objeto JSON (sen nenhum outro texto) com as especificações técnicas REAIS para o seguinte equipamento:
+    Retorne APENAS um objeto JSON válido com as especificações técnicas REAIS para o seguinte equipamento:
     Marca: ${brand}
-    Modelo: ${model}
+    Modelo: ${modelName}
     Tipo: ${type}
 
     ${type === 'Módulo' ? `
-    O JSON deve seguir este formato:
+    Use este schema:
     {
       "pmax": "valor em W",
       "tolerance": "ex: 0~+5W",
@@ -65,7 +89,7 @@ export const getEquipmentSpecs = async (brand: string, model: string, type: 'Mó
       "isc": "valor em A",
       "efficiency": "valor em %"
     }` : `
-    O JSON deve seguir este formato (baseado no Aiswei Ai-LB ou similar):
+    Use este schema:
     {
       "pvMaxPower": "valor Wp",
       "pvMaxVoltage": "valor V",
@@ -102,15 +126,11 @@ export const getEquipmentSpecs = async (brand: string, model: string, type: 'Mó
     }`}
   `;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-1.5-flash',
-    contents: prompt,
-  });
-
   try {
-    const text = response.text;
-    const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-    return JSON.parse(jsonStr);
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    return JSON.parse(text);
   } catch (e) {
     console.error('Error parsing AI response:', e);
     return null;
