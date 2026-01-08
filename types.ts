@@ -33,14 +33,61 @@ export interface Notification {
 }
 
 export interface SurveyData {
-  roofType: string;
-  azimuth: number;
-  inclination: number;
-  shadingIssues: string;
-  electricalPanelStatus: string;
-  transformerDistance: number;
+  // 1. Dados do Local
+  address: string;
   coordinates: { lat: number; lng: number } | null;
+
+  // 2. Características do Telhado
+  roofType: string;
+  roofOrientation: string;
+  inclination: number;
+  roofCondition: string;
+  roofLoadCapacity?: string; // Capacidade de Carga
+
+  // 3. Consumo de Energia
+  averageConsumption: number;
+  consumptionHistory?: string; // Histórico descritivo ou dados dos últimos 12 meses
+  contractedDemand: number;
+
+  // 4. Conexão Elétrica
+  connectionType: 'Monofásico' | 'Bifásico' | 'Trifásico';
+  voltage: '127V' | '220V' | '380V';
+  breakerCurrent: number;
+  panelLocation: string;
+
+  // 5. Sombreamento
+  shadingIssues: string;
+  shadingAngle?: string; // Angulo de sombreamento
+  shadingPeriod?: string;
+
+  // 6. Acesso e Segurança
+  accessEase: string;
+  safetyConditions: string;
+
+  // 7. Documentação
+  hasElectricalProject: boolean;
+  hasPropertyDeed: boolean;
+  documentsNotes?: string; // Notas sobre documentos
+
+  // 8. Equipamentos Existentes
+  existingEquipmentType?: string;
+  existingEquipmentCondition: string;
+  structureReusePossible: boolean;
+
+  // 9. Dados Meteorológicos
+  averageIrradiation?: number;
+
+  // 10. Informações Cliente
+  clientObjectives?: string;
+  investmentAvailability?: string;
+
+  // Geral
   photos: string[];
+
+  // Campos legados mantidos para compatibilidade
+  azimuth?: number;
+  electricalPanelStatus?: string;
+  transformerDistance?: number;
 }
 
 export interface Project {

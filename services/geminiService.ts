@@ -18,13 +18,26 @@ export const analyzeSurvey = async (survey: SurveyData, project: Project) => {
     Analise os seguintes dados de vistoria técnica fotovoltaica e forneça recomendações de engenharia:
     Cliente: ${project.clientName}
     Potência Estimada: ${project.powerKwp} kWp
-    Tipo de Telhado: ${survey.roofType}
-    Azimute: ${survey.azimuth}°
-    Inclinação: ${survey.inclination}°
-    Problemas de Sombreamento: ${survey.shadingIssues}
-    Estado do Quadro Elétrico: ${survey.electricalPanelStatus}
     
-    Forneça uma análise técnica concisa sobre a viabilidade, sugestões de melhoria no layout e alertas de segurança.
+    1. Telhado e Estrutura:
+    - Material: ${survey.roofType}
+    - Orientação: ${survey.roofOrientation}
+    - Inclinação: ${survey.inclination}°
+    - Condição: ${survey.roofCondition}
+    - Capacidade de Carga: ${survey.roofLoadCapacity || 'Não informado'}
+
+    2. Elétrica:
+    - Conexão: ${survey.connectionType} - ${survey.voltage}
+    - Disjuntor Geral: ${survey.breakerCurrent} A
+    - Local do Quadro: ${survey.panelLocation}
+    - Consumo Médio: ${survey.averageConsumption} kWh
+    
+    3. Condições Locais:
+    - Sombreamento: ${survey.shadingIssues} (Período: ${survey.shadingPeriod || 'N/A'})
+    - Facilidade de Acesso: ${survey.accessEase}
+    - Segurança: ${survey.safetyConditions}
+    
+    Forneça uma análise técnica concisa sobre a viabilidade, sugestões de melhoria no layout, adequação do padrão de entrada e alertas de segurança.
   `;
 
   try {
