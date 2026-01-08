@@ -172,7 +172,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         <p className="text-center text-slate-500 text-xs mt-8">
-          © 2024 SolarFlow Pro. Desenvolvido por VTS Engenharia.
+          © {new Date().getFullYear()} SolarFlow Pro. Desenvolvido por VTS Engenharia.
         </p>
       </div>
     </div>
