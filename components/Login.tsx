@@ -100,8 +100,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                       type="button"
                       onClick={() => setRole(UserRole.INTEGRADOR)}
                       className={`py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all flex flex-col items-center gap-1 ${role === UserRole.INTEGRADOR
-                          ? 'border-amber-400 bg-amber-50 text-amber-700'
-                          : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
+                        ? 'border-amber-400 bg-amber-50 text-amber-700'
+                        : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
                         }`}
                     >
                       <i className="fas fa-hard-hat text-lg"></i>
@@ -111,8 +111,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                       type="button"
                       onClick={() => setRole(UserRole.ENGENHARIA)}
                       className={`py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all flex flex-col items-center gap-1 ${role === UserRole.ENGENHARIA
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
                         }`}
                     >
                       <i className="fas fa-pencil-ruler text-lg"></i>
@@ -172,7 +172,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         <p className="text-center text-slate-500 text-xs mt-8">
-          © 2024 SolarFlow Pro. Desenvolvido para eficiência energética.
+          © 2024 SolarFlow Pro. Desenvolvido por VTS Engenharia.
         </p>
       </div>
     </div>
