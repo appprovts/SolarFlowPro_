@@ -10,6 +10,7 @@ const EquipmentList: React.FC = () => {
     const [model, setModel] = useState('');
     const [type, setType] = useState('Módulo');
     const [description, setDescription] = useState('');
+    const [searchTerm, setSearchTerm] = useState(''); // New state for search filter
 
     // Technical Specs
     const [pmax, setPmax] = useState('550');
@@ -175,6 +176,12 @@ const EquipmentList: React.FC = () => {
         }
     };
 
+    const filteredItems = items.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.specs?.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.specs?.model?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     if (loading) return <div className="p-8 text-slate-500">Carregando equipamentos...</div>;
 
     return (
@@ -209,15 +216,15 @@ const EquipmentList: React.FC = () => {
                                     type="button"
                                     onClick={handleAIFill}
                                     disabled={aiLoading}
-                                    className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg font-bold hover:bg-amber-200 transition flex items-center gap-2 whitespace-nowrap text-xs"
-                                    title="Preencher com Inteligência Artificial"
+                                    className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-lg font-bold hover:from-amber-500 hover:to-orange-600 transition flex items-center gap-2 whitespace-nowrap text-xs shadow-md"
+                                    title="Preencher especificações técnicas automaticamente com IA"
                                 >
                                     {aiLoading ? (
                                         <i className="fas fa-spinner fa-spin"></i>
                                     ) : (
                                         <i className="fas fa-magic"></i>
                                     )}
-                                    {aiLoading ? 'Buscando...' : 'IA'}
+                                    {aiLoading ? 'Buscando...' : 'Buscar Detalhes'}
                                 </button>
                             </div>
                         </div>
@@ -323,10 +330,21 @@ const EquipmentList: React.FC = () => {
                         </button>
                     </div>
                 </form>
+            </div >
+
+            <div className="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <i className="fas fa-search text-slate-400"></i>
+                <input
+                    type="text"
+                    placeholder="Buscar equipamento por nome, marca ou modelo..."
+                    className="w-full text-sm outline-none text-slate-700 placeholder:text-slate-400"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {items.map(item => (
+                {filteredItems.map(item => (
                     <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 relative group">
                         <div className="flex items-start justify-between mb-4">
                             <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600">
@@ -398,7 +416,7 @@ const EquipmentList: React.FC = () => {
                     </div>
                 ))}
             </div>
-        </div>
+        </div >
     );
 };
 

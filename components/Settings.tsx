@@ -13,6 +13,77 @@ const MOCK_USERS: User[] = [
     { id: '3', name: 'Carlos Admin', role: UserRole.ADMIN, avatar: 'https://i.pravatar.cc/150?u=3', phone: '11977665544' },
 ];
 
+interface UserCardProps {
+    user: User;
+    setEditingUserId: (id: string | null) => void;
+    onUpdateUser: (u: User) => void;
+    editingUserId: string | null;
+}
+
+const UserCard: React.FC<UserCardProps> = ({ user, setEditingUserId, onUpdateUser, editingUserId }) => {
+    const isEditing = editingUserId === user.id;
+    const [editForm, setEditForm] = useState(user);
+
+    if (isEditing) {
+        return (
+            <div className="bg-white p-4 rounded-xl border border-blue-200 shadow-sm flex flex-col gap-3">
+                <div className="flex gap-4">
+                    <div className="relative w-16 h-16">
+                        <img src={editForm.avatar} className="w-16 h-16 rounded-full object-cover" />
+                        <button className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                            <i className="fas fa-camera"></i>
+                        </button>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                        <input
+                            className="w-full text-sm border-slate-200 rounded-lg"
+                            value={editForm.name}
+                            onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                            placeholder="Nome"
+                        />
+                        <select
+                            className="w-full text-sm border-slate-200 rounded-lg"
+                            value={editForm.role}
+                            onChange={e => setEditForm({ ...editForm, role: e.target.value as UserRole })}
+                        >
+                            <option value={UserRole.INTEGRADOR}>Integrador</option>
+                            <option value={UserRole.ENGENHARIA}>Engenharia</option>
+                            <option value={UserRole.ADMIN}>Admin</option>
+                        </select>
+                    </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-2">
+                    <button onClick={() => setEditingUserId(null)} className="text-slate-500 text-sm px-3 py-1">Cancelar</button>
+                    <button onClick={() => onUpdateUser(editForm)} className="bg-blue-600 text-white text-sm px-3 py-1 rounded-lg">Salvar</button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between hover:shadow-md transition">
+            <div className="flex items-center gap-4">
+                <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full ring-2 ring-slate-100" />
+                <div>
+                    <h4 className="font-bold text-slate-800">{user.name}</h4>
+                    <span className={`text-xs px-2 py-0.5 rounded-full border ${user.role === UserRole.ADMIN ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                        user.role === UserRole.ENGENHARIA ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            'bg-blue-50 text-blue-700 border-blue-200'
+                        }`}>
+                        {user.role}
+                    </span>
+                </div>
+            </div>
+            <button
+                onClick={() => setEditingUserId(user.id)}
+                className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600"
+            >
+                <i className="fas fa-edit"></i>
+            </button>
+        </div>
+    );
+};
+
 const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
     const [activeTab, setActiveTab] = useState<'profile' | 'users'>('profile');
     const [profileForm, setProfileForm] = useState(currentUser);
@@ -30,70 +101,6 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
     const handleUpdateOtherUser = (updatedUser: User) => {
         setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
         setEditingUserId(null);
-    };
-
-    const UserCard = ({ user }: { user: User }) => {
-        const isEditing = editingUserId === user.id;
-        const [editForm, setEditForm] = useState(user);
-
-        if (isEditing) {
-            return (
-                <div className="bg-white p-4 rounded-xl border border-blue-200 shadow-sm flex flex-col gap-3">
-                    <div className="flex gap-4">
-                        <div className="relative w-16 h-16">
-                            <img src={editForm.avatar} className="w-16 h-16 rounded-full object-cover" />
-                            <button className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
-                                <i className="fas fa-camera"></i>
-                            </button>
-                        </div>
-                        <div className="flex-1 space-y-2">
-                            <input
-                                className="w-full text-sm border-slate-200 rounded-lg"
-                                value={editForm.name}
-                                onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                                placeholder="Nome"
-                            />
-                            <select
-                                className="w-full text-sm border-slate-200 rounded-lg"
-                                value={editForm.role}
-                                onChange={e => setEditForm({ ...editForm, role: e.target.value as UserRole })}
-                            >
-                                <option value={UserRole.INTEGRADOR}>Integrador</option>
-                                <option value={UserRole.ENGENHARIA}>Engenharia</option>
-                                <option value={UserRole.ADMIN}>Admin</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div className="flex justify-end gap-2 mt-2">
-                        <button onClick={() => setEditingUserId(null)} className="text-slate-500 text-sm px-3 py-1">Cancelar</button>
-                        <button onClick={() => handleUpdateOtherUser(editForm)} className="bg-blue-600 text-white text-sm px-3 py-1 rounded-lg">Salvar</button>
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between hover:shadow-md transition">
-                <div className="flex items-center gap-4">
-                    <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full ring-2 ring-slate-100" />
-                    <div>
-                        <h4 className="font-bold text-slate-800">{user.name}</h4>
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${user.role === UserRole.ADMIN ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                                user.role === UserRole.ENGENHARIA ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                    'bg-blue-50 text-blue-700 border-blue-200'
-                            }`}>
-                            {user.role}
-                        </span>
-                    </div>
-                </div>
-                <button
-                    onClick={() => setEditingUserId(user.id)}
-                    className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600"
-                >
-                    <i className="fas fa-edit"></i>
-                </button>
-            </div>
-        );
     };
 
     return (
@@ -187,7 +194,13 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {users.map(user => (
-                            <UserCard key={user.id} user={user} />
+                            <UserCard
+                                key={user.id}
+                                user={user}
+                                editingUserId={editingUserId}
+                                setEditingUserId={setEditingUserId}
+                                onUpdateUser={handleUpdateOtherUser}
+                            />
                         ))}
                     </div>
                 </div>
