@@ -1,7 +1,7 @@
-
 export enum UserRole {
   INTEGRADOR = 'Integrador',
-  ENGENHARIA = 'Engenharia'
+  ENGENHARIA = 'Engenharia',
+  ADMIN = 'Admin'
 }
 
 export interface User {
@@ -30,6 +30,8 @@ export interface Notification {
   timestamp: Date;
   isRead: boolean;
   projectId?: string;
+  action?: 'accept_survey' | 'view_details';
+  actionData?: any; // To store whatsapp link or project ID details
 }
 
 export interface SurveyData {

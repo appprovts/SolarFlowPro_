@@ -28,12 +28,28 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
   const handleSaveChanges = () => {
     onUpdate(editedProject);
     setEditMode(false);
-    onNotify({
-      title: 'Projeto Atualizado',
-      message: 'As informações do projeto foram atualizadas.',
-      type: 'success',
-      projectId: project.id
-    });
+
+    // Check if integrator was assigned or changed
+    if (editedProject.assignedIntegrator && editedProject.assignedIntegrator !== project.assignedIntegrator) {
+      onNotify({
+        title: 'Nova Vistoria Agendada',
+        message: `Você foi designado para realizar a vistoria técnica do projeto ${editedProject.clientName}.`,
+        type: 'info',
+        projectId: project.id,
+        action: 'accept_survey',
+        actionData: {
+          // Link do WhatsApp com mensagem pré-formatada para confirmar agendamento
+          whatsappLink: `https://wa.me/5511999999999?text=Ol%C3%A1%2C%20confirmo%20o%20agendamento%20da%20vistoria%20para%20o%20clieente%20${encodeURIComponent(editedProject.clientName)}.`
+        }
+      });
+    } else {
+      onNotify({
+        title: 'Projeto Atualizado',
+        message: 'As informações do projeto foram atualizadas.',
+        type: 'success',
+        projectId: project.id
+      });
+    }
   };
 
   const isIntegrador = currentUser.role === UserRole.INTEGRADOR;

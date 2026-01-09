@@ -9,6 +9,7 @@ import NotificationPanel from './components/NotificationPanel';
 import KanbanBoard from './components/KanbanBoard';
 import EquipmentList from './components/EquipmentList';
 import SurveyList from './components/SurveyList';
+import Settings from './components/Settings';
 import { getCurrentUser, signOut } from './services/authService';
 
 const MOCK_PROJECTS: Project[] = [
@@ -44,7 +45,7 @@ const MOCK_PROJECTS: Project[] = [
   }
 ];
 
-type AppView = 'dashboard' | 'projects' | 'vistorias' | 'engenharia' | 'equipments';
+type AppView = 'dashboard' | 'projects' | 'vistorias' | 'engenharia' | 'equipments' | 'settings';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -156,6 +157,7 @@ const App: React.FC = () => {
       case 'vistorias': return 'Gestão de Vistorias e Campo';
       case 'engenharia': return 'Pipeline de Engenharia e Obras';
       case 'equipments': return 'Catálogo de Equipamentos';
+      case 'settings': return 'Configurações da Conta';
       default: return 'SolarFlow Pro';
     }
   };
@@ -211,6 +213,12 @@ const App: React.FC = () => {
               icon="fa-tools"
               label="Equipamentos"
             />
+            <SidebarLink
+              active={view === 'settings'}
+              onClick={() => setView('settings')}
+              icon="fa-cog"
+              label="Configurações"
+            />
           </nav>
         </div>
 
@@ -260,6 +268,12 @@ const App: React.FC = () => {
                 onClose={() => setShowNotifications(false)}
                 onMarkAsRead={handleMarkAsRead}
                 onClearAll={handleClearAll}
+                onAction={(n) => {
+                  if (n.action === 'accept_survey') {
+                    alert('Vistoria aceita com sucesso!');
+                    handleMarkAsRead(n.id);
+                  }
+                }}
               />
             )}
 
@@ -287,6 +301,8 @@ const App: React.FC = () => {
               projects={getFilteredProjects()}
               onSelectProject={setSelectedProject}
             />
+          ) : view === 'settings' ? (
+            <Settings currentUser={currentUser} onUpdateUser={setCurrentUser} />
           ) : (
             <ProjectList
               projects={getFilteredProjects()}
