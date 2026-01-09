@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { User, UserRole } from '../types';
 
 interface SettingsProps {
@@ -103,6 +103,25 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
         setEditingUserId(null);
     };
 
+    // Profile Picture Logic
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handlePhotoClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                setProfileForm({ ...profileForm, avatar: base64String });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             {isAdmin && (
@@ -132,11 +151,18 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
 
                     <form onSubmit={handleSaveProfile} className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="flex flex-col items-center gap-4">
-                            <div className="relative group cursor-pointer">
+                            <div className="relative group cursor-pointer" onClick={handlePhotoClick}>
                                 <img src={profileForm.avatar} alt="Avatar" className="w-32 h-32 rounded-full object-cover ring-4 ring-slate-50 group-hover:scale-105 transition shadow-lg" />
                                 <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                                     <i className="fas fa-camera text-white text-2xl"></i>
                                 </div>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                />
                             </div>
                             <p className="text-xs text-slate-400 text-center">Clique para alterar foto</p>
                         </div>
