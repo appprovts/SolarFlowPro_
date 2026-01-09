@@ -19,6 +19,23 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
   const [loading, setLoading] = useState(false);
   const [memorial, setMemorial] = useState<string | null>(null);
 
+  const [editMode, setEditMode] = useState(false);
+  const [editedProject, setEditedProject] = useState<Project>(project);
+
+  // Mock de integradores para seleção
+  const MOCK_INTEGRATORS = ['João Técnico', 'Maria Solar', 'Carlos Instalações', 'Pedro Campo'];
+
+  const handleSaveChanges = () => {
+    onUpdate(editedProject);
+    setEditMode(false);
+    onNotify({
+      title: 'Projeto Atualizado',
+      message: 'As informações do projeto foram atualizadas.',
+      type: 'success',
+      projectId: project.id
+    });
+  };
+
   const isIntegrador = currentUser.role === UserRole.INTEGRADOR;
   const isEngenharia = currentUser.role === UserRole.ENGENHARIA;
 
@@ -28,21 +45,21 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
 
   const handleSaveSurvey = async (data: SurveyData) => {
     setLoading(true);
-    const updatedProject = { 
-      ...project, 
-      surveyData: data, 
-      status: ProjectStatus.AGUARDANDO_ANALISE 
+    const updatedProject = {
+      ...project,
+      surveyData: data,
+      status: ProjectStatus.AGUARDANDO_ANALISE
     };
     onUpdate(updatedProject);
     setLoading(false);
-    
+
     onNotify({
       title: 'Vistoria Enviada',
       message: `O integrador enviou os dados de campo para o projeto: ${project.clientName}.`,
       type: 'success',
       projectId: project.id
     });
-    
+
     alert("Vistoria enviada para análise da engenharia!");
   };
 
@@ -53,7 +70,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
       const result = await analyzeSurvey(project.surveyData, project);
       setAnalysis(result);
       onUpdate({ ...project, status: ProjectStatus.ANALISE });
-      
+
       onNotify({
         title: 'Análise de IA Concluída',
         message: `O parecer técnico automatizado foi gerado para ${project.clientName}.`,
@@ -72,7 +89,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
     const text = await generateTechnicalMemorial(project);
     setMemorial(text);
     setLoading(false);
-    
+
     onNotify({
       title: 'Documento Gerado',
       message: `Memorial descritivo gerado com sucesso para ${project.clientName}.`,
@@ -87,7 +104,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
     if (currentIndex < statuses.length - 1) {
       const newStatus = statuses[currentIndex + 1];
       onUpdate({ ...project, status: newStatus });
-      
+
       onNotify({
         title: 'Status Atualizado',
         message: `O projeto ${project.clientName} avançou para a fase: ${newStatus}.`,
@@ -129,18 +146,101 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-6">
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                  <h3 className="text-lg font-bold mb-4">Informações do Sistema</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <InfoItem label="Potência Instalada" value={`${project.powerKwp} kWp`} />
-                    <InfoItem label="Geração Estimada" value={`${project.estimatedProduction} kWh/mês`} />
-                    <InfoItem label="Data de Início" value={new Date(project.startDate).toLocaleDateString()} />
-                    <InfoItem label="Concessionária" value="CPFL Paulista" />
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold">Informações do Projeto e Cliente</h3>
+                    {isEngenharia && (
+                      <button onClick={() => setEditMode(!editMode)} className="text-sm text-blue-600 font-bold hover:underline">
+                        <i className={`fas ${editMode ? 'fa-times' : 'fa-edit'} mr-1`}></i>
+                        {editMode ? 'Cancelar Edição' : 'Editar Dados'}
+                      </button>
+                    )}
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Cliente</label>
+                      {editMode ? (
+                        <input
+                          className="w-full rounded-lg border-slate-200 text-sm"
+                          value={editedProject.clientName}
+                          onChange={e => setEditedProject({ ...editedProject, clientName: e.target.value })}
+                        />
+                      ) : (
+                        <p className="text-slate-900 font-semibold">{project.clientName}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Endereço</label>
+                      {editMode ? (
+                        <input
+                          className="w-full rounded-lg border-slate-200 text-sm"
+                          value={editedProject.address}
+                          onChange={e => setEditedProject({ ...editedProject, address: e.target.value })}
+                        />
+                      ) : (
+                        <p className="text-slate-900 font-semibold">{project.address}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Integrador Responsável</label>
+                      {editMode ? (
+                        <select
+                          className="w-full rounded-lg border-slate-200 text-sm"
+                          value={editedProject.assignedIntegrator || ''}
+                          onChange={e => setEditedProject({ ...editedProject, assignedIntegrator: e.target.value })}
+                        >
+                          <option value="">Selecione um integrador...</option>
+                          {MOCK_INTEGRATORS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      ) : (
+                        <p className="text-slate-900 font-semibold">{project.assignedIntegrator || 'Não atribuído'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Status</label>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold border inline-block ${STATUS_COLORS[project.status]}`}>
+                        {STATUS_ICONS[project.status]} {project.status}
+                      </span>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Potência (kWp)</label>
+                      {editMode ? (
+                        <input
+                          type="number"
+                          className="w-full rounded-lg border-slate-200 text-sm"
+                          value={editedProject.powerKwp}
+                          onChange={e => setEditedProject({ ...editedProject, powerKwp: Number(e.target.value) })}
+                        />
+                      ) : (
+                        <p className="text-slate-900 font-semibold">{project.powerKwp} kWp</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {editMode && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={handleSaveChanges}
+                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-emerald-700 transition shadow-lg"
+                      >
+                        <i className="fas fa-save mr-2"></i>Salvar Alterações
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                   <h3 className="text-lg font-bold mb-4">Notas do Projeto</h3>
-                  <p className="text-slate-600 italic whitespace-pre-wrap">{project.notes || 'Nenhuma observação adicionada.'}</p>
+                  {editMode ? (
+                    <textarea
+                      className="w-full rounded-lg border-slate-200"
+                      rows={3}
+                      value={editedProject.notes}
+                      onChange={e => setEditedProject({ ...editedProject, notes: e.target.value })}
+                    />
+                  ) : (
+                    <p className="text-slate-600 italic whitespace-pre-wrap">{project.notes || 'Nenhuma observação adicionada.'}</p>
+                  )}
                 </div>
               </div>
 
@@ -149,7 +249,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                   <div className="bg-blue-600 text-white p-6 rounded-2xl shadow-lg">
                     <h3 className="text-lg font-bold mb-2">Ações de Engenharia</h3>
                     <p className="text-blue-100 text-sm mb-6">Mova o projeto para a próxima fase do fluxo de trabalho.</p>
-                    <button 
+                    <button
                       onClick={advanceStatus}
                       className="w-full bg-white text-blue-600 py-3 rounded-xl font-bold hover:bg-blue-50 transition"
                     >
@@ -162,7 +262,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                   <div className="bg-amber-400 text-slate-900 p-6 rounded-2xl shadow-lg">
                     <h3 className="text-lg font-bold mb-2">Análise de Campo Pendente</h3>
                     <p className="text-amber-900 text-sm mb-6">O integrador finalizou a vistoria. Utilize a IA para gerar o parecer técnico.</p>
-                    <button 
+                    <button
                       onClick={handlePerformAnalysis}
                       disabled={loading}
                       className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition flex items-center justify-center gap-2"
@@ -203,9 +303,9 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                 </div>
               )}
               {(canEditSurvey || project.surveyData) ? (
-                <SurveyForm 
-                  project={project} 
-                  onSave={handleSaveSurvey} 
+                <SurveyForm
+                  project={project}
+                  onSave={handleSaveSurvey}
                   readOnly={!canEditSurvey}
                 />
               ) : null}
@@ -217,7 +317,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-bold">Arquivos Gerados</h3>
-                  <button 
+                  <button
                     onClick={handleGenerateMemorial}
                     disabled={loading || project.status === ProjectStatus.VISTORIA}
                     className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition"
@@ -226,7 +326,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                     {loading ? 'Gerando...' : 'Gerar Memorial Descritivo'}
                   </button>
                 </div>
-                
+
                 {memorial ? (
                   <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 font-serif whitespace-pre-wrap text-slate-800">
                     {memorial}
@@ -253,11 +353,10 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
 };
 
 const TabButton = ({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) => (
-  <button 
+  <button
     onClick={onClick}
-    className={`px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${
-      active ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
-    }`}
+    className={`px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${active ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+      }`}
   >
     {label}
   </button>

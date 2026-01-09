@@ -13,10 +13,20 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
     // 1. Local
     address: project.address,
     coordinates: null,
+    // Fotos específicas
+    photoFacade: '',
+    photoMeter: '',
+    photoBreaker: '',
+    photoEntrance: '',
+    photoInverterLocation: '',
+    // Distâncias
+    distMeterInverter: 0,
+    distInverterPanels: 0,
+    distInverterInternalPanel: 0,
 
     // 2. Telhado
     roofType: 'Cerâmica',
-    roofOrientation: 'Norte',
+    roofOrientation: [], // Multi select
     inclination: 15,
     roofCondition: 'Bom',
     roofLoadCapacity: 'Normal',
@@ -25,6 +35,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
     averageConsumption: 0,
     consumptionHistory: '',
     contractedDemand: 0,
+    invoiceFile: '',
 
     // 4. Elétrica
     connectionType: 'Bifásico',
@@ -33,13 +44,11 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
     panelLocation: 'Interno',
 
     // 5. Sombreamento
-    shadingIssues: 'Nenhum',
+    shadingIssues: '',
+    shadingType: 'Nenhum',
+    shadingDescription: '',
     shadingAngle: '',
     shadingPeriod: '',
-
-    // 6. Acesso
-    accessEase: 'Fácil',
-    safetyConditions: 'Com guarda-corpo',
 
     // 7. Docs
     hasElectricalProject: false,
@@ -51,12 +60,10 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
     existingEquipmentCondition: 'Normal',
     structureReusePossible: false,
 
-    // 9. Meteo
-    averageIrradiation: 0,
-
     // 10. Cliente
-    clientObjectives: 'Economia',
+    clientObjectives: 'Vistoria Inicial',
     investmentAvailability: 'Imediata',
+    clientDocPhoto: '',
 
     photos: []
   });
@@ -65,7 +72,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const steps = [
-    { id: 0, title: 'Local e Clima', icon: 'fa-map-marked-alt' },
+    { id: 0, title: 'Local', icon: 'fa-map-marked-alt' },
     { id: 1, title: 'Telhado', icon: 'fa-home' },
     { id: 2, title: 'Elétrica', icon: 'fa-bolt' },
     { id: 3, title: 'Sombra', icon: 'fa-cloud-sun' },
@@ -113,6 +120,17 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
     });
   };
 
+  const handleSingleFile = (field: keyof SurveyData, file: File) => {
+    if (readOnly) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setFormData(prev => ({ ...prev, [field]: e.target?.result as string }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const removePhoto = (index: number) => {
     if (readOnly) return;
     const newPhotos = formData.photos.filter((_, i) => i !== index);
@@ -121,10 +139,10 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
 
   const renderStepContent = () => {
     switch (activeStep) {
-      case 0: // Dados do Local e Meteorológicos
+      case 0: // Dados do Local
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">1. Dados do Local e 9. Meteorologia</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Dados do Local</h3>
 
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
               <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Localização</h4>
@@ -169,25 +187,91 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
             </div>
 
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Dados Meteorológicos</h4>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Radiação Solar Média (Wh/m²/dia)</label>
-                <input
-                  type="number"
-                  readOnly={readOnly}
-                  className="w-full rounded-xl border-slate-200 bg-white"
-                  placeholder="Se disponível (Ex: 5.2)"
-                  value={formData.averageIrradiation || ''}
-                  onChange={(e) => setFormData({ ...formData, averageIrradiation: Number(e.target.value) })}
-                />
+              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Fotos Específicas</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { label: 'Fachada', field: 'photoFacade' },
+                  { label: 'Medidor', field: 'photoMeter' },
+                  { label: 'Disjuntor do Medidor', field: 'photoBreaker' },
+                  { label: 'Padrão de Entrada', field: 'photoEntrance' },
+                  { label: 'Local do Inversor', field: 'photoInverterLocation' },
+                ].map((item) => (
+                  <div key={item.field}>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{item.label}</label>
+                    <div className="flex items-center gap-2">
+                      {formData[item.field as keyof SurveyData] ? (
+                        <div className="relative w-full h-20 bg-slate-200 rounded-lg overflow-hidden">
+                          <img src={formData[item.field as keyof SurveyData] as string} className="w-full h-full object-cover" />
+                          {!readOnly && (
+                            <button
+                              onClick={() => setFormData({ ...formData, [item.field]: '' })}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center text-xs"
+                            >
+                              X
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={readOnly}
+                          className="block w-full text-sm text-slate-500
+                             file:mr-4 file:py-2 file:px-4
+                             file:rounded-full file:border-0
+                             file:text-sm file:font-semibold
+                             file:bg-blue-50 file:text-blue-700
+                             hover:file:bg-blue-100"
+                          onChange={(e) => e.target.files?.[0] && handleSingleFile(item.field as keyof SurveyData, e.target.files[0])}
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
+              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Distâncias (Metros)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Medidor até Inversor</label>
+                  <input
+                    type="number"
+                    readOnly={readOnly}
+                    className="w-full rounded-xl border-slate-200 bg-white"
+                    value={formData.distMeterInverter || ''}
+                    onChange={(e) => setFormData({ ...formData, distMeterInverter: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Inversor até Placas</label>
+                  <input
+                    type="number"
+                    readOnly={readOnly}
+                    className="w-full rounded-xl border-slate-200 bg-white"
+                    value={formData.distInverterPanels || ''}
+                    onChange={(e) => setFormData({ ...formData, distInverterPanels: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Inversor até Quadro Interno</label>
+                  <input
+                    type="number"
+                    readOnly={readOnly}
+                    className="w-full rounded-xl border-slate-200 bg-white"
+                    value={formData.distInverterInternalPanel || ''}
+                    onChange={(e) => setFormData({ ...formData, distInverterInternalPanel: Number(e.target.value) })}
+                  />
+                </div>
               </div>
             </div>
           </div>
         );
-      case 1: // Telhado e Acesso
+      case 1: // Telhado
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">2. Telhado e 6. Acesso</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Características do Telhado</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -224,20 +308,26 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Orientação (Azimute)</label>
-                <select
-                  disabled={readOnly}
-                  className="w-full rounded-xl border-slate-200 bg-slate-50"
-                  value={formData.roofOrientation}
-                  onChange={(e) => setFormData({ ...formData, roofOrientation: e.target.value })}
-                >
-                  <option>Norte</option>
-                  <option>Nordeste</option>
-                  <option>Noroeste</option>
-                  <option>Leste</option>
-                  <option>Oeste</option>
-                  <option>Sul</option>
-                </select>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Orientação (Multi-seleção)</label>
+                <div className="space-y-1 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                  {['Norte', 'Nordeste', 'Noroeste', 'Leste', 'Oeste', 'Sul'].map(opt => (
+                    <label key={opt} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        disabled={readOnly}
+                        checked={formData.roofOrientation.includes(opt)}
+                        onChange={(e) => {
+                          const newOrientation = e.target.checked
+                            ? [...formData.roofOrientation, opt]
+                            : formData.roofOrientation.filter(o => o !== opt);
+                          setFormData({ ...formData, roofOrientation: newOrientation });
+                        }}
+                        className="rounded text-blue-600"
+                      />
+                      <span className="text-sm">{opt}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Inclinação Estimada (°)</label>
@@ -263,38 +353,13 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                   placeholder="Ex: Reforçada, Precisa de análise..."
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Facilidade de Acesso</label>
-                <select
-                  disabled={readOnly}
-                  className="w-full rounded-xl border-slate-200 bg-slate-50"
-                  value={formData.accessEase}
-                  onChange={(e) => setFormData({ ...formData, accessEase: e.target.value })}
-                >
-                  <option>Fácil - Nível da rua</option>
-                  <option>Médio - Escada necessária</option>
-                  <option>Difícil - Andaime/Elevador necessário</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Condições de Segurança</label>
-              <textarea
-                readOnly={readOnly}
-                rows={2}
-                className="w-full rounded-xl border-slate-200 bg-slate-50"
-                value={formData.safetyConditions}
-                onChange={(e) => setFormData({ ...formData, safetyConditions: e.target.value })}
-                placeholder="Guarda-corpo, linha de vida, pontos de ancoragem..."
-              ></textarea>
             </div>
           </div>
         );
       case 2: // Elétrica, Consumo e Equipamentos
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">3. Consumo, 4. Conexão e 8. Equipamentos</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Elétrica: Consumo, Conexão e Equipamentos</h3>
 
             {/* Consumo */}
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -321,16 +386,48 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                   />
                 </div>
               </div>
-              <div className="w-full">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Histórico (Últimos 12 meses)</label>
-                <textarea
-                  readOnly={readOnly}
-                  rows={2}
-                  className="w-full rounded-xl border-slate-200 bg-white"
-                  value={formData.consumptionHistory || ''}
-                  onChange={(e) => setFormData({ ...formData, consumptionHistory: e.target.value })}
-                  placeholder="Insira os dados de consumo mês a mês ou copie o histórico..."
-                ></textarea>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Histórico (Últimos 12 meses)</label>
+                  <textarea
+                    readOnly={readOnly}
+                    rows={3}
+                    className="w-full rounded-xl border-slate-200 bg-white"
+                    value={formData.consumptionHistory || ''}
+                    onChange={(e) => setFormData({ ...formData, consumptionHistory: e.target.value })}
+                    placeholder="Insira os dados de consumo mês a mês..."
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Fatura de Energia</label>
+                  <div className="flex items-center gap-2">
+                    {formData.invoiceFile ? (
+                      <div className="w-full p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
+                        <span className="text-sm text-emerald-600 font-medium"><i className="fas fa-check-circle mr-1"></i>Fatura anexada</span>
+                        {!readOnly && (
+                          <button onClick={() => setFormData({ ...formData, invoiceFile: '' })} className="text-red-500 hover:text-red-700">
+                            <i className="fas fa-trash"></i>
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        disabled={readOnly}
+                        className="block w-full text-sm text-slate-500
+                           file:mr-4 file:py-2 file:px-4
+                           file:rounded-full file:border-0
+                           file:text-sm file:font-semibold
+                           file:bg-emerald-50 file:text-emerald-700
+                           hover:file:bg-emerald-100"
+                        onChange={(e) => e.target.files?.[0] && handleSingleFile('invoiceFile', e.target.files[0])}
+                      />
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">Envie uma foto ou PDF da fatura para extração automática.</p>
+                </div>
               </div>
             </div>
 
@@ -420,50 +517,51 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
       case 3: // Sombreamento
         return (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">5. Sombreamento</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Análise de Sombreamento</h3>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Obstáculos Identificados</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de Sombreamento</label>
+              <select
+                disabled={readOnly}
+                className="w-full rounded-xl border-slate-200 bg-slate-50 mb-3"
+                value={formData.shadingType || 'Nenhum'}
+                onChange={(e) => setFormData({ ...formData, shadingType: e.target.value as any })}
+              >
+                <option>Nenhum</option>
+                <option>Vegetação</option>
+                <option>Prédio</option>
+                <option>Outros</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
               <textarea
                 readOnly={readOnly}
                 rows={3}
                 className="w-full rounded-xl border-slate-200 bg-slate-50"
-                value={formData.shadingIssues}
-                onChange={(e) => setFormData({ ...formData, shadingIssues: e.target.value })}
-                placeholder="Árvores, prédios vizinhos, chaminés, platibandas..."
+                value={formData.shadingDescription || ''}
+                onChange={(e) => setFormData({ ...formData, shadingDescription: e.target.value })}
+                placeholder="Descreva detalhadamente o sombreamento..."
               ></textarea>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Ângulo Estimado</label>
-                <input
-                  type="text"
-                  readOnly={readOnly}
-                  className="w-full rounded-xl border-slate-200 bg-slate-50"
-                  value={formData.shadingAngle || ''}
-                  onChange={(e) => setFormData({ ...formData, shadingAngle: e.target.value })}
-                  placeholder="Ex: 15° Oeste"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Período Crítico</label>
-                <input
-                  type="text"
-                  readOnly={readOnly}
-                  className="w-full rounded-xl border-slate-200 bg-slate-50"
-                  value={formData.shadingPeriod || ''}
-                  onChange={(e) => setFormData({ ...formData, shadingPeriod: e.target.value })}
-                  placeholder="Ex: Manhã (até as 9h)"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Obstáculos Identificados (Fallback)</label>
+              <input
+                readOnly={readOnly}
+                className="w-full rounded-xl border-slate-200 bg-slate-50"
+                value={formData.shadingIssues}
+                onChange={(e) => setFormData({ ...formData, shadingIssues: e.target.value })}
+                placeholder="Árvores, prédios vizinhos, chaminés, platibandas..."
+              />
             </div>
           </div>
         );
       case 4: // Extras e Doc
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">10. Cliente e 7. Documentação</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Cliente e Documentação</h3>
 
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
               <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Informações do Cliente</h4>
@@ -473,13 +571,14 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                   <select
                     disabled={readOnly}
                     className="w-full rounded-xl border-slate-200 bg-white"
-                    value={formData.clientObjectives || 'Economia'}
+                    value={formData.clientObjectives || 'Vistoria Inicial'}
                     onChange={(e) => setFormData({ ...formData, clientObjectives: e.target.value })}
                   >
+                    <option>Vistoria Inicial</option>
+                    <option>Instalação</option>
+                    <option>Comissionamento</option>
                     <option>Economia Máxima</option>
                     <option>Sustentabilidade</option>
-                    <option>Independência Energética</option>
-                    <option>Investimento</option>
                   </select>
                 </div>
                 <div>
@@ -495,6 +594,34 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                     <option>Curto Prazo</option>
                     <option>Médio Prazo</option>
                   </select>
+                </div>
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Foto Documento (CNH/Profissional)</label>
+                <div className="flex items-center gap-2">
+                  {formData.clientDocPhoto ? (
+                    <div className="w-full p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
+                      <span className="text-sm text-blue-600 font-medium"><i className="fas fa-id-card mr-1"></i>Documento anexado</span>
+                      {!readOnly && (
+                        <button onClick={() => setFormData({ ...formData, clientDocPhoto: '' })} className="text-red-500 hover:text-red-700">
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={readOnly}
+                      className="block w-full text-sm text-slate-500
+                           file:mr-4 file:py-2 file:px-4
+                           file:rounded-full file:border-0
+                           file:text-sm file:font-semibold
+                           file:bg-blue-50 file:text-blue-700
+                           hover:file:bg-blue-100"
+                      onChange={(e) => e.target.files?.[0] && handleSingleFile('clientDocPhoto', e.target.files[0])}
+                    />
+                  )}
                 </div>
               </div>
             </div>

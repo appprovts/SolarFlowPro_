@@ -36,18 +36,29 @@ export interface SurveyData {
   // 1. Dados do Local
   address: string;
   coordinates: { lat: number; lng: number } | null;
+  // Fotos obrigatórias do local
+  photoFacade?: string;
+  photoMeter?: string;
+  photoBreaker?: string;
+  photoEntrance?: string;
+  photoInverterLocation?: string;
+  // Distâncias
+  distMeterInverter?: number;
+  distInverterPanels?: number;
+  distInverterInternalPanel?: number;
 
   // 2. Características do Telhado
   roofType: string;
-  roofOrientation: string;
+  roofOrientation: string[]; // Alterado para array
   inclination: number;
   roofCondition: string;
-  roofLoadCapacity?: string; // Capacidade de Carga
+  roofLoadCapacity?: string;
 
   // 3. Consumo de Energia
   averageConsumption: number;
-  consumptionHistory?: string; // Histórico descritivo ou dados dos últimos 12 meses
+  consumptionHistory?: string;
   contractedDemand: number;
+  invoiceFile?: string; // Foto/Arquivo da fatura
 
   // 4. Conexão Elétrica
   connectionType: 'Monofásico' | 'Bifásico' | 'Trifásico';
@@ -56,38 +67,32 @@ export interface SurveyData {
   panelLocation: string;
 
   // 5. Sombreamento
-  shadingIssues: string;
-  shadingAngle?: string; // Angulo de sombreamento
+  shadingIssues: string; // Mantido como fallback ou geral
+  shadingType?: 'Vegetação' | 'Prédio' | 'Outros' | 'Nenhum';
+  shadingDescription?: string;
+  shadingAngle?: string;
   shadingPeriod?: string;
-
-  // 6. Acesso e Segurança
-  accessEase: string;
-  safetyConditions: string;
 
   // 7. Documentação
   hasElectricalProject: boolean;
   hasPropertyDeed: boolean;
-  documentsNotes?: string; // Notas sobre documentos
+  documentsNotes?: string;
 
   // 8. Equipamentos Existentes
   existingEquipmentType?: string;
   existingEquipmentCondition: string;
   structureReusePossible: boolean;
 
-  // 9. Dados Meteorológicos
-  averageIrradiation?: number;
-
   // 10. Informações Cliente
-  clientObjectives?: string;
+  clientObjectives?: string; // Vistoria Inicial, Instalação, Comissionamento...
   investmentAvailability?: string;
+  clientDocPhoto?: string; // CNH ou documento
 
-  // Geral
+  // Geral (Fotos extras)
   photos: string[];
 
   // Campos legados mantidos para compatibilidade
-  azimuth?: number;
-  electricalPanelStatus?: string;
-  transformerDistance?: number;
+  azimuth?: number; // pode ser removido no futuro
 }
 
 export interface Project {
