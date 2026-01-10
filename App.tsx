@@ -56,6 +56,19 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('theme') === 'dark';
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -169,7 +182,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50 relative">
+    <div className={`min-h-screen flex ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} relative transition-colors duration-300`}>
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div
@@ -336,7 +349,12 @@ const App: React.FC = () => {
               onSelectProject={setSelectedProject}
             />
           ) : view === 'settings' ? (
-            <Settings currentUser={currentUser} onUpdateUser={setCurrentUser} />
+            <Settings
+              currentUser={currentUser}
+              onUpdateUser={setCurrentUser}
+              darkMode={darkMode}
+              onToggleDarkMode={setDarkMode}
+            />
           ) : (
             <ProjectList
               projects={getFilteredProjects()}

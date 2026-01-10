@@ -1,9 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { User, UserRole } from '../types';
+import { updateUser } from '../services/authService';
 
 interface SettingsProps {
     currentUser: User;
     onUpdateUser: (updatedUser: User) => void;
+    darkMode: boolean;
+    onToggleDarkMode: (enabled: boolean) => void;
 }
 
 // Mock users for Admin management demo
@@ -84,18 +87,30 @@ const UserCard: React.FC<UserCardProps> = ({ user, setEditingUserId, onUpdateUse
     );
 };
 
-const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
+const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, darkMode, onToggleDarkMode }) => {
     const [activeTab, setActiveTab] = useState<'profile' | 'users'>('profile');
     const [profileForm, setProfileForm] = useState(currentUser);
     const [users, setUsers] = useState<User[]>(MOCK_USERS);
     const [editingUserId, setEditingUserId] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     const isAdmin = currentUser.role === UserRole.ADMIN;
 
-    const handleSaveProfile = (e: React.FormEvent) => {
+    const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault();
-        onUpdateUser(profileForm);
-        alert('Perfil atualizado com sucesso!');
+        setIsSaving(true);
+        try {
+            const { user, error } = await updateUser(profileForm);
+            if (error) throw error;
+            if (user) {
+                onUpdateUser(user);
+                alert('Perfil atualizado com sucesso!');
+            }
+        } catch (err: any) {
+            alert('Erro ao atualizar perfil: ' + err.message);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleUpdateOtherUser = (updatedUser: User) => {
@@ -125,17 +140,17 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             {isAdmin && (
-                <div className="flex bg-white rounded-xl shadow-sm overflow-hidden w-fit border border-slate-200">
+                <div className="flex bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden w-fit border border-slate-200 dark:border-slate-800">
                     <button
                         onClick={() => setActiveTab('profile')}
-                        className={`px-6 py-2 text-sm font-bold transition ${activeTab === 'profile' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`px-6 py-2 text-sm font-bold transition ${activeTab === 'profile' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                     >
                         Meu Perfil
                     </button>
-                    <div className="w-px bg-slate-200"></div>
+                    <div className="w-px bg-slate-200 dark:bg-slate-800"></div>
                     <button
                         onClick={() => setActiveTab('users')}
-                        className={`px-6 py-2 text-sm font-bold transition ${activeTab === 'users' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`px-6 py-2 text-sm font-bold transition ${activeTab === 'users' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                     >
                         Gerenciar Usuários
                     </button>
@@ -143,9 +158,9 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
             )}
 
             {activeTab === 'profile' ? (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="p-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-slate-800">Editar Perfil</h2>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">Editar Perfil</h2>
                         <span className="text-sm text-slate-500">Mantenha seus dados atualizados</span>
                     </div>
 
@@ -169,11 +184,11 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
 
                         <div className="md:col-span-2 space-y-5">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome Completo</label>
                                 <input
                                     type="text"
                                     required
-                                    className="w-full rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500"
                                     value={profileForm.name}
                                     onChange={e => setProfileForm({ ...profileForm, name: e.target.value })}
                                 />
@@ -181,29 +196,59 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser }) => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Telefone / WhatsApp</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Telefone / WhatsApp</label>
                                     <input
                                         type="text"
-                                        className="w-full rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                                        className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500"
                                         value={profileForm.phone || ''}
                                         onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
                                         placeholder="(00) 00000-0000"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Função</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Função</label>
                                     <input
                                         type="text"
                                         disabled
-                                        className="w-full rounded-xl border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
+                                        className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 cursor-not-allowed"
                                         value={profileForm.role}
                                     />
                                 </div>
                             </div>
 
-                            <div className="pt-4 flex justify-end">
-                                <button type="submit" className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg">
-                                    Salvar Alterações
+                            <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+                                <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                                    <i className="fas fa-magic"></i>
+                                    Aparência do Sistema
+                                </h3>
+                                <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${darkMode ? 'bg-slate-700 text-amber-400' : 'bg-white text-slate-500'} shadow-sm border border-slate-200 dark:border-slate-700`}>
+                                            <i className={`fas ${darkMode ? 'fa-moon' : 'fa-sun'}`}></i>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-900 dark:text-white">Modo Escuro</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Alternar entre temas claro e escuro</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => onToggleDarkMode(!darkMode)}
+                                        className={`w-12 h-6 rounded-full transition-colors relative ${darkMode ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${darkMode ? 'left-7' : 'left-1'}`}></div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 flex justify-end text-sm">
+                                <button
+                                    type="submit"
+                                    disabled={isSaving}
+                                    className="bg-slate-900 dark:bg-amber-400 text-white dark:text-slate-900 px-6 py-2.5 rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-amber-500 transition shadow-lg disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {isSaving && <i className="fas fa-circle-notch fa-spin"></i>}
+                                    {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                                 </button>
                             </div>
                         </div>

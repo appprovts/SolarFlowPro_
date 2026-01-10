@@ -76,6 +76,32 @@ export const getCurrentUser = async (): Promise<User | null> => {
         id: user.id,
         name: user.user_metadata.full_name || user.email?.split('@')[0] || 'User',
         role: (user.user_metadata.role as UserRole) || UserRole.INTEGRADOR,
-        avatar: user.user_metadata.avatar_url || `https://i.pravatar.cc/150?u=${user.id}`
+        avatar: user.user_metadata.avatar_url || `https://i.pravatar.cc/150?u=${user.id}`,
+        phone: user.user_metadata.phone || ''
     };
+};
+
+export const updateUser = async (user: User): Promise<{ user: User | null; error: any }> => {
+    const { data, error } = await supabase.auth.updateUser({
+        data: {
+            full_name: user.name,
+            avatar_url: user.avatar,
+            phone: user.phone
+        }
+    });
+
+    if (error) return { user: null, error };
+
+    if (data.user) {
+        const updatedUser: User = {
+            id: data.user.id,
+            name: data.user.user_metadata.full_name || user.name,
+            role: (data.user.user_metadata.role as UserRole) || user.role,
+            avatar: data.user.user_metadata.avatar_url || user.avatar,
+            phone: data.user.user_metadata.phone || user.phone
+        };
+        return { user: updatedUser, error: null };
+    }
+
+    return { user: null, error: new Error('Ocorreu um erro ao atualizar os dados.') };
 };

@@ -10,4 +10,16 @@
 body {
   margin: 0;
   padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Explicit Dark Mode Support for Tailwind 4 / Modern CSS */
+.dark {
+  color-scheme: dark;
+  --primary: #fcd34d; /* amber-300 for better contrast */
+}
+
+.dark body {
+  background-color: #020617; /* slate-950 */
+  color: #f8fafc; /* slate-50 */
 }
