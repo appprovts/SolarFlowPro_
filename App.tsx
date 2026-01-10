@@ -55,6 +55,7 @@ const App: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -132,6 +133,11 @@ const App: React.FC = () => {
     setView('dashboard');
   };
 
+  const handleMenuClick = (targetView: AppView) => {
+    setView(targetView);
+    setIsSidebarOpen(false);
+  };
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const getFilteredProjects = () => {
@@ -163,14 +169,31 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50">
-      <aside className="w-64 bg-slate-900 text-white flex flex-col fixed h-full z-20 shadow-2xl">
+    <div className="min-h-screen flex bg-slate-50 relative">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 z-20 md:hidden backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      <aside className={`w-64 bg-slate-900 text-white flex flex-col fixed h-full z-30 shadow-2xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}>
         <div className="p-8">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center text-slate-900 shadow-lg shadow-amber-400/20">
-              <i className="fas fa-sun text-xl"></i>
+          <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center text-slate-900 shadow-lg shadow-amber-400/20">
+                <i className="fas fa-sun text-xl"></i>
+              </div>
+              <span className="text-xl font-bold tracking-tight">SolarFlow<span className="text-amber-400">Pro</span></span>
             </div>
-            <span className="text-xl font-bold tracking-tight">SolarFlow<span className="text-amber-400">Pro</span></span>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="md:hidden text-slate-400 hover:text-white"
+            >
+              <i className="fas fa-times text-xl"></i>
+            </button>
           </div>
 
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 px-4">Menu Principal</p>
@@ -178,14 +201,14 @@ const App: React.FC = () => {
             {isEngenhariaRole && (
               <SidebarLink
                 active={view === 'dashboard'}
-                onClick={() => setView('dashboard')}
+                onClick={() => handleMenuClick('dashboard')}
                 icon="fa-columns"
                 label="Dashboard"
               />
             )}
             <SidebarLink
               active={view === 'projects'}
-              onClick={() => setView('projects')}
+              onClick={() => handleMenuClick('projects')}
               icon="fa-layer-group"
               label="Todos Projetos"
             />
@@ -193,14 +216,14 @@ const App: React.FC = () => {
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 px-4">Operacional</p>
             <SidebarLink
               active={view === 'vistorias'}
-              onClick={() => setView('vistorias')}
+              onClick={() => handleMenuClick('vistorias')}
               icon="fa-hard-hat"
               label="Vistorias"
               badge={projects.filter(p => p.status === ProjectStatus.VISTORIA).length}
             />
             <SidebarLink
               active={view === 'engenharia'}
-              onClick={() => setView('engenharia')}
+              onClick={() => handleMenuClick('engenharia')}
               icon="fa-pencil-ruler"
               label="Engenharia"
               badge={projects.filter(p => p.status === ProjectStatus.ANALISE || p.status === ProjectStatus.AGUARDANDO_ANALISE).length}
@@ -209,13 +232,13 @@ const App: React.FC = () => {
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-6 mb-4 px-4">Recursos</p>
             <SidebarLink
               active={view === 'equipments'}
-              onClick={() => setView('equipments')}
+              onClick={() => handleMenuClick('equipments')}
               icon="fa-tools"
               label="Equipamentos"
             />
             <SidebarLink
               active={view === 'settings'}
-              onClick={() => setView('settings')}
+              onClick={() => handleMenuClick('settings')}
               icon="fa-cog"
               label="Configurações"
             />
@@ -227,7 +250,7 @@ const App: React.FC = () => {
             <div className="flex items-center gap-3">
               <img src={currentUser.avatar} className="w-10 h-10 rounded-full ring-2 ring-slate-700" alt="Avatar" />
               <div className="overflow-hidden">
-                <p className="text-sm font-bold truncate">{currentUser.name}</p>
+                <p className="text-sm font-bold truncate max-w-[100px]">{currentUser.name}</p>
                 <p className="text-xs text-slate-400">{currentUser.role}</p>
               </div>
             </div>
@@ -238,21 +261,29 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-      <main className="flex-1 ml-64 p-8">
-        <header className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-              {getViewTitle()}
-            </h1>
-            <p className="text-slate-500 mt-1">
-              Olá, {currentUser.name}. Gerencie os fluxos de trabalho do sistema.
-            </p>
+      <main className="flex-1 w-full md:ml-64 p-4 md:p-8 transition-all duration-300">
+        <header className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
+          <div className="flex items-start gap-4">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="mt-1 md:hidden w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 shadow-sm"
+            >
+              <i className="fas fa-bars text-xl"></i>
+            </button>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+                {getViewTitle()}
+              </h1>
+              <p className="text-sm md:text-base text-slate-500 mt-1">
+                Olá, {currentUser.name}.
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4 relative">
+          <div className="flex items-center gap-3 md:gap-4 relative self-end md:self-auto">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="w-12 h-12 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition relative shadow-sm"
+              className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition relative shadow-sm"
             >
               <i className="fas fa-bell text-lg"></i>
               {unreadCount > 0 && (
@@ -263,33 +294,36 @@ const App: React.FC = () => {
             </button>
 
             {showNotifications && (
-              <NotificationPanel
-                notifications={notifications}
-                onClose={() => setShowNotifications(false)}
-                onMarkAsRead={handleMarkAsRead}
-                onClearAll={handleClearAll}
-                onAction={(n) => {
-                  if (n.action === 'accept_survey') {
-                    alert('Vistoria aceita com sucesso!');
-                    handleMarkAsRead(n.id);
-                  }
-                }}
-              />
+              <div className="absolute right-0 top-14 z-50 w-full md:w-auto">
+                <NotificationPanel
+                  notifications={notifications}
+                  onClose={() => setShowNotifications(false)}
+                  onMarkAsRead={handleMarkAsRead}
+                  onClearAll={handleClearAll}
+                  onAction={(n) => {
+                    if (n.action === 'accept_survey') {
+                      alert('Vistoria aceita com sucesso!');
+                      handleMarkAsRead(n.id);
+                    }
+                  }}
+                />
+              </div>
             )}
 
             {isEngenhariaRole && view !== 'equipments' && (
               <button
                 onClick={addNewProject}
-                className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-6 py-3 rounded-xl font-bold shadow-lg shadow-amber-400/20 transition flex items-center gap-2"
+                className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold shadow-lg shadow-amber-400/20 transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap"
               >
                 <i className="fas fa-plus"></i>
-                Novo Projeto
+                <span className="hidden sm:inline">Novo Projeto</span>
+                <span className="sm:hidden">Novo</span>
               </button>
             )}
           </div>
         </header>
 
-        <div className="animate-in fade-in duration-500">
+        <div className="animate-in fade-in duration-500 overflow-x-hidden">
           {view === 'equipments' ? (
             <EquipmentList />
           ) : (view === 'dashboard' && isEngenhariaRole) ? (

@@ -726,40 +726,40 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-[700px]">
+    <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-full md:h-[700px]">
       {/* Stepper Header */}
-      <div className="bg-slate-900 text-white p-4">
-        <div className="flex justify-between items-center overflow-x-auto pb-2 scrollbar-hide">
+      <div className="bg-slate-900 text-white p-2 md:p-4">
+        <div className="flex justify-between items-center overflow-x-auto pb-2 scrollbar-none gap-2">
           {steps.map((step) => (
             <button
               key={step.id}
               onClick={() => setActiveStep(step.id)}
               disabled={step.id > activeStep + 1 && !readOnly} // Prevent skipping too far ahead
-              className={`flex flex-col items-center min-w-[80px] gap-2 transition-opacity ${activeStep === step.id ? 'opacity-100 font-bold text-amber-400' : 'opacity-50 hover:opacity-80'
+              className={`flex flex-col items-center min-w-[70px] md:min-w-[80px] gap-1 md:gap-2 transition-opacity ${activeStep === step.id ? 'opacity-100 font-bold text-amber-400' : 'opacity-50 hover:opacity-80'
                 }`}
             >
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${activeStep === step.id ? 'border-amber-400 bg-slate-800' : 'border-slate-600 bg-slate-800'
+              <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 ${activeStep === step.id ? 'border-amber-400 bg-slate-800' : 'border-slate-600 bg-slate-800'
                 }`}>
-                <i className={`fas ${step.icon}`}></i>
+                <i className={`fas ${step.icon} text-xs md:text-base`}></i>
               </div>
-              <span className="text-xs">{step.title}</span>
+              <span className="text-[10px] md:text-xs text-center">{step.title}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50">
         {renderStepContent()}
       </div>
 
       {/* Footer Actions */}
-      <div className="p-6 bg-white border-t border-slate-200 flex justify-between items-center">
+      <div className="p-4 md:p-6 bg-white border-t border-slate-200 flex justify-between items-center mt-auto">
         <button
           type="button"
           onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
           disabled={activeStep === 0}
-          className="px-6 py-2 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50 font-semibold"
+          className="px-4 md:px-6 py-2 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50 font-semibold text-sm md:text-base"
         >
           Voltar
         </button>
@@ -769,20 +769,20 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
             <button
               onClick={handleSubmit}
               disabled={formData.photos.length < 3}
-              className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="bg-emerald-600 text-white px-4 md:px-8 py-2 md:py-3 rounded-xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm md:text-base"
             >
               <i className="fas fa-check-circle"></i>
-              Finalizar Vistoria
+              Finalizar
             </button>
           ) : null
         ) : (
           <button
             type="button"
             onClick={() => setActiveStep(Math.min(steps.length - 1, activeStep + 1))}
-            className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg flex items-center gap-2"
+            className="bg-slate-900 text-white px-6 md:px-8 py-2 md:py-3 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg flex items-center gap-2 text-sm md:text-base"
           >
             Próximo
-            <i className="fas fa-arrow-right"></i>
+            <i className="fas fa-arrow-right text-xs md:text-sm"></i>
           </button>
         )}
       </div>

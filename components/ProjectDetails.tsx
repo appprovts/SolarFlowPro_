@@ -131,33 +131,33 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-      <div className="bg-slate-50 w-full max-w-5xl h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div className="bg-slate-50 w-full max-w-5xl h-full md:h-[90vh] md:rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
         {/* Header */}
-        <div className="bg-white px-8 py-6 border-b border-slate-200 flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-slate-900">{project.clientName}</h2>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${STATUS_COLORS[project.status]}`}>
+        <div className="bg-white px-4 md:px-8 py-4 md:py-6 border-b border-slate-200 flex items-center justify-between">
+          <div className="overflow-hidden">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3">
+              <h2 className="text-xl md:text-2xl font-bold text-slate-900 truncate">{project.clientName}</h2>
+              <span className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-semibold border ${STATUS_COLORS[project.status]}`}>
                 {STATUS_ICONS[project.status]} {project.status}
               </span>
             </div>
-            <p className="text-slate-500 mt-1">{project.address}</p>
+            <p className="text-xs md:text-sm text-slate-500 mt-1 truncate">{project.address}</p>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400">
+          <button onClick={onClose} className="min-w-[40px] h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400">
             <i className="fas fa-times text-xl"></i>
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-white px-8 border-b border-slate-200">
-          <TabButton active={activeTab === 'info'} onClick={() => setActiveTab('info')} label="Visão Geral" />
-          <TabButton active={activeTab === 'vistoria'} onClick={() => setActiveTab('vistoria')} label="Vistoria Técnica" />
-          {isEngenharia && <TabButton active={activeTab === 'documentos'} onClick={() => setActiveTab('documentos')} label="Documentação" />}
+        <div className="flex bg-white px-4 md:px-8 border-b border-slate-200 overflow-x-auto scrollbar-hide">
+          <TabButton active={activeTab === 'info'} onClick={() => setActiveTab('info')} label="Geral" />
+          <TabButton active={activeTab === 'vistoria'} onClick={() => setActiveTab('vistoria')} label="Vistoria" />
+          {isEngenharia && <TabButton active={activeTab === 'documentos'} onClick={() => setActiveTab('documentos')} label="Docs" />}
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
           {activeTab === 'info' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-6">
@@ -371,7 +371,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
 const TabButton = ({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) => (
   <button
     onClick={onClick}
-    className={`px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${active ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+    className={`px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${active ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
       }`}
   >
     {label}
