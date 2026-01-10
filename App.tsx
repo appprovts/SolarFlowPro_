@@ -11,39 +11,9 @@ import EquipmentList from './components/EquipmentList';
 import SurveyList from './components/SurveyList';
 import Settings from './components/Settings';
 import { getCurrentUser, signOut } from './services/authService';
+import { getProjects, createProject, updateProject } from './services/projectService';
 
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: '1',
-    clientName: 'João Silva',
-    address: 'Rua das Flores, 123 - Campinas, SP',
-    status: ProjectStatus.VISTORIA,
-    powerKwp: 4.5,
-    estimatedProduction: 550,
-    startDate: '2023-10-15',
-    notes: 'Cliente quer o inversor na garagem.'
-  },
-  {
-    id: '2',
-    clientName: 'Fazenda Santa Maria',
-    address: 'Estrada Rural KM 12 - Piracicaba, SP',
-    status: ProjectStatus.AGUARDANDO_ANALISE,
-    powerKwp: 75.0,
-    estimatedProduction: 9200,
-    startDate: '2023-09-20',
-    notes: 'Vistoria realizada ontem por campo.'
-  },
-  {
-    id: '3',
-    clientName: 'Padaria do Sol',
-    address: 'Av. Brasil, 500 - Americana, SP',
-    status: ProjectStatus.INSTALACAO,
-    powerKwp: 12.0,
-    estimatedProduction: 1450,
-    startDate: '2023-10-01',
-    notes: 'Requer reforço estrutural no telhado.'
-  }
-];
+// Initial data will be fetched from Supabase
 
 type AppView = 'dashboard' | 'projects' | 'vistorias' | 'engenharia' | 'equipments' | 'settings';
 
@@ -51,7 +21,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<AppView>('dashboard');
-  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -75,6 +45,10 @@ const App: React.FC = () => {
       try {
         const user = await getCurrentUser();
         setCurrentUser(user);
+        if (user) {
+          const dbProjects = await getProjects();
+          setProjects(dbProjects);
+        }
       } catch (err) {
         console.error('Erro ao verificar autenticação:', err);
       } finally {
@@ -96,11 +70,14 @@ const App: React.FC = () => {
     return <Login onLogin={setCurrentUser} />;
   }
 
-  const isEngenhariaRole = currentUser.role === UserRole.ENGENHARIA;
+  const isEngenhariaRole = currentUser.role === UserRole.ENGENHARIA || currentUser.role === UserRole.ADMIN;
 
-  const handleUpdateProject = (updated: Project) => {
-    setProjects(prev => prev.map(p => p.id === updated.id ? updated : p));
-    setSelectedProject(updated);
+  const handleUpdateProject = async (updated: Project) => {
+    const result = await updateProject(updated.id, updated);
+    if (result) {
+      setProjects(prev => prev.map(p => p.id === result.id ? result : p));
+      setSelectedProject(result);
+    }
   };
 
   const addNotification = (n: Omit<Notification, 'id' | 'timestamp' | 'isRead'>) => {
@@ -119,9 +96,8 @@ const App: React.FC = () => {
 
   const handleClearAll = () => setNotifications([]);
 
-  const addNewProject = () => {
-    const newProject: Project = {
-      id: Math.random().toString(36).substr(2, 9),
+  const addNewProject = async () => {
+    const newProjectData: Omit<Project, 'id'> = {
       clientName: 'Novo Cliente Solar',
       address: 'Endereço a definir',
       status: ProjectStatus.VISTORIA,
@@ -130,14 +106,18 @@ const App: React.FC = () => {
       startDate: new Date().toISOString().split('T')[0],
       notes: ''
     };
-    setProjects([newProject, ...projects]);
-    setSelectedProject(newProject);
 
-    addNotification({
-      title: 'Novo Projeto Criado',
-      message: `O projeto para "Novo Cliente Solar" foi iniciado com sucesso.`,
-      type: 'info'
-    });
+    const created = await createProject(newProjectData);
+    if (created) {
+      setProjects([created, ...projects]);
+      setSelectedProject(created);
+
+      addNotification({
+        title: 'Novo Projeto Criado',
+        message: `O projeto para "${created.clientName}" foi iniciado com sucesso.`,
+        type: 'info'
+      });
+    }
   };
 
   const handleLogout = async () => {

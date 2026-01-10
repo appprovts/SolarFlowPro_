@@ -54,10 +54,12 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
 
   const isIntegrador = currentUser.role === UserRole.INTEGRADOR;
   const isEngenharia = currentUser.role === UserRole.ENGENHARIA;
+  const isAdmin = currentUser.role === UserRole.ADMIN;
+  const isManagement = isEngenharia || isAdmin;
 
   const canEditSurvey = isIntegrador && project.status === ProjectStatus.VISTORIA;
-  const canPerformAnalysis = isEngenharia && project.status === ProjectStatus.AGUARDANDO_ANALISE;
-  const canAdvanceStatus = isEngenharia && project.status !== ProjectStatus.AGUARDANDO_ANALISE && project.status !== ProjectStatus.CONCLUIDO;
+  const canPerformAnalysis = isManagement && project.status === ProjectStatus.AGUARDANDO_ANALISE;
+  const canManageFlow = isManagement;
 
   const handleSaveSurvey = async (data: SurveyData) => {
     setLoading(true);
@@ -130,38 +132,71 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
     }
   };
 
+  const retractStatus = () => {
+    const statuses = Object.values(ProjectStatus);
+    const currentIndex = statuses.indexOf(project.status);
+    if (currentIndex > 0) {
+      const newStatus = statuses[currentIndex - 1];
+      onUpdate({ ...project, status: newStatus });
+
+      onNotify({
+        title: 'Fluxo Retraído',
+        message: `O projeto ${project.clientName} retornou para a fase: ${newStatus}.`,
+        type: 'warning',
+        projectId: project.id
+      });
+    }
+  };
+
+  const resetToSurvey = () => {
+    if (confirm("Tem certeza que deseja reiniciar o fluxo? Isso retornará o projeto para a fase de Vistoria.")) {
+      onUpdate({
+        ...project,
+        status: ProjectStatus.VISTORIA,
+        surveyData: undefined // Optional: decide if we want to clear survey data
+      });
+
+      onNotify({
+        title: 'Fluxo Reiniciado',
+        message: `O fluxo do projeto ${project.clientName} foi reiniciado pela gestão.`,
+        type: 'warning',
+        projectId: project.id
+      });
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-slate-50 w-full max-w-5xl h-full md:h-[90vh] md:rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl h-full md:h-[90vh] md:rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 border border-slate-200 dark:border-slate-800">
         {/* Header */}
-        <div className="bg-white px-4 md:px-8 py-4 md:py-6 border-b border-slate-200 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 px-4 md:px-8 py-4 md:py-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="overflow-hidden">
             <div className="flex flex-wrap items-center gap-2 md:gap-3">
-              <h2 className="text-xl md:text-2xl font-bold text-slate-900 truncate">{project.clientName}</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white truncate">{project.clientName}</h2>
               <span className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-semibold border ${STATUS_COLORS[project.status]}`}>
                 {STATUS_ICONS[project.status]} {project.status}
               </span>
             </div>
-            <p className="text-xs md:text-sm text-slate-500 mt-1 truncate">{project.address}</p>
+            <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1 truncate">{project.address}</p>
           </div>
-          <button onClick={onClose} className="min-w-[40px] h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400">
+          <button onClick={onClose} className="min-w-[40px] h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400">
             <i className="fas fa-times text-xl"></i>
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-white px-4 md:px-8 border-b border-slate-200 overflow-x-auto scrollbar-hide">
+        <div className="flex bg-white dark:bg-slate-900 px-4 md:px-8 border-b border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-hide">
           <TabButton active={activeTab === 'info'} onClick={() => setActiveTab('info')} label="Geral" />
           <TabButton active={activeTab === 'vistoria'} onClick={() => setActiveTab('vistoria')} label="Vistoria" />
           {isEngenharia && <TabButton active={activeTab === 'documentos'} onClick={() => setActiveTab('documentos')} label="Docs" />}
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-slate-950">
           {activeTab === 'info' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-6">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold">Informações do Projeto e Cliente</h3>
                     {isEngenharia && (
@@ -261,16 +296,41 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
               </div>
 
               <div className="space-y-6">
-                {canAdvanceStatus && (
-                  <div className="bg-blue-600 text-white p-6 rounded-2xl shadow-lg">
-                    <h3 className="text-lg font-bold mb-2">Ações de Engenharia</h3>
-                    <p className="text-blue-100 text-sm mb-6">Mova o projeto para a próxima fase do fluxo de trabalho.</p>
-                    <button
-                      onClick={advanceStatus}
-                      className="w-full bg-white text-blue-600 py-3 rounded-xl font-bold hover:bg-blue-50 transition"
-                    >
-                      Avançar Fluxo
-                    </button>
+                {canManageFlow && (
+                  <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-lg space-y-4">
+                    <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                      <i className="fas fa-tasks text-amber-400"></i>
+                      Gestão de Fluxo
+                    </h3>
+                    <p className="text-slate-400 text-xs mb-4">Controle manual do progresso do projeto.</p>
+
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={advanceStatus}
+                        disabled={project.status === ProjectStatus.CONCLUIDO || project.status === ProjectStatus.AGUARDANDO_ANALISE}
+                        className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        <i className="fas fa-arrow-right"></i>
+                        Avançar Fluxo
+                      </button>
+
+                      <button
+                        onClick={retractStatus}
+                        disabled={project.status === ProjectStatus.VISTORIA}
+                        className="w-full bg-slate-800 text-slate-300 py-2.5 rounded-xl font-bold hover:bg-slate-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        <i className="fas fa-arrow-left"></i>
+                        Retrair Fase
+                      </button>
+
+                      <button
+                        onClick={resetToSurvey}
+                        className="w-full border-2 border-red-500/30 text-red-400 py-2.5 rounded-xl font-bold hover:bg-red-500/10 transition flex items-center justify-center gap-2"
+                      >
+                        <i className="fas fa-undo"></i>
+                        Reiniciar Tudo
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -371,7 +431,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
 const TabButton = ({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) => (
   <button
     onClick={onClick}
-    className={`px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${active ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+    className={`px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${active ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
       }`}
   >
     {label}
