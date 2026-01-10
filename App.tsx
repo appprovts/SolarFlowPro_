@@ -136,7 +136,11 @@ const App: React.FC = () => {
   const getFilteredProjects = () => {
     switch (view) {
       case 'vistorias':
-        return projects.filter(p => p.status === ProjectStatus.VISTORIA || p.status === ProjectStatus.AGUARDANDO_ANALISE);
+        const vistoriaProjects = projects.filter(p => p.status === ProjectStatus.VISTORIA || p.status === ProjectStatus.AGUARDANDO_ANALISE);
+        if (currentUser.role === UserRole.INTEGRADOR) {
+          return vistoriaProjects.filter(p => p.assignedIntegrator === currentUser.name);
+        }
+        return vistoriaProjects;
       case 'engenharia':
         return projects.filter(p => [
           ProjectStatus.ANALISE,
@@ -212,7 +216,7 @@ const App: React.FC = () => {
               onClick={() => handleMenuClick('vistorias')}
               icon="fa-hard-hat"
               label="Vistorias"
-              badge={projects.filter(p => p.status === ProjectStatus.VISTORIA).length}
+              badge={getFilteredProjects().filter(p => p.status === ProjectStatus.VISTORIA).length}
             />
             <SidebarLink
               active={view === 'engenharia'}

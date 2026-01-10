@@ -22,8 +22,9 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
   const [editMode, setEditMode] = useState(false);
   const [editedProject, setEditedProject] = useState<Project>(project);
 
-  // Mock de integradores para seleção
-  const MOCK_INTEGRATORS = ['João Técnico', 'Maria Solar', 'Carlos Instalações', 'Pedro Campo'];
+  // Lista de membros para atribuição
+  const MOCK_INTEGRATORS = ['João Gabriel', 'João Técnico', 'Maria Solar', 'Carlos Instalações', 'Pedro Campo'];
+  const MOCK_ENGINEERS = ['Altamirandus', 'Maria Engenheira', 'Carlos Admin'];
 
   const handleSaveChanges = () => {
     onUpdate(editedProject);

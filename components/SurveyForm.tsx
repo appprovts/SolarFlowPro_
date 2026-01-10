@@ -215,13 +215,14 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                         <input
                           type="file"
                           accept="image/*"
+                          capture="environment"
                           disabled={readOnly}
                           className="block w-full text-sm text-slate-500
-                             file:mr-4 file:py-2 file:px-4
-                             file:rounded-full file:border-0
-                             file:text-sm file:font-semibold
-                             file:bg-blue-50 file:text-blue-700
-                             hover:file:bg-blue-100"
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded-full file:border-0
+                              file:text-sm file:font-semibold
+                              file:bg-blue-50 file:text-blue-700
+                              hover:file:bg-blue-100"
                           onChange={(e) => e.target.files?.[0] && handleSingleFile(item.field as keyof SurveyData, e.target.files[0])}
                         />
                       )}
@@ -415,6 +416,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                       <input
                         type="file"
                         accept="image/*,application/pdf"
+                        capture="environment"
                         disabled={readOnly}
                         className="block w-full text-sm text-slate-500
                            file:mr-4 file:py-2 file:px-4
@@ -612,6 +614,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                     <input
                       type="file"
                       accept="image/*"
+                      capture="environment"
                       disabled={readOnly}
                       className="block w-full text-sm text-slate-500
                            file:mr-4 file:py-2 file:px-4
@@ -677,6 +680,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
               type="file"
               multiple
               accept="image/*"
+              capture="environment"
               className="hidden"
               ref={fileInputRef}
               onChange={(e) => handleFiles(e.target.files)}

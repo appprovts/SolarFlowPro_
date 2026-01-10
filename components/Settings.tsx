@@ -9,11 +9,13 @@ interface SettingsProps {
     onToggleDarkMode: (enabled: boolean) => void;
 }
 
-// Mock users for Admin management demo
+// Membros da equipe
 const MOCK_USERS: User[] = [
     { id: '1', name: 'João Técnico', role: UserRole.INTEGRADOR, avatar: 'https://i.pravatar.cc/150?u=1', phone: '11999887766' },
     { id: '2', name: 'Maria Engenheira', role: UserRole.ENGENHARIA, avatar: 'https://i.pravatar.cc/150?u=2', phone: '11988776655' },
     { id: '3', name: 'Carlos Admin', role: UserRole.ADMIN, avatar: 'https://i.pravatar.cc/150?u=3', phone: '11977665544' },
+    { id: '4', name: 'João Gabriel', role: UserRole.INTEGRADOR, avatar: 'https://i.pravatar.cc/150?u=4', phone: '11912345678' },
+    { id: '5', name: 'Altamirandus', role: UserRole.ENGENHARIA, avatar: 'https://i.pravatar.cc/150?u=5', phone: '11987654321' },
 ];
 
 interface UserCardProps {
@@ -261,6 +263,11 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, darkMode
                         <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-emerald-700 transition">
                             <i className="fas fa-plus mr-2"></i>Novo Usuário
                         </button>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-6 text-sm text-blue-800">
+                        <i className="fas fa-info-circle mr-2"></i>
+                        <strong>Gestão de Acesso:</strong> Para cadastrar um novo Admin, clique em "Novo Usuário" e selecione a função "Admin". Apenas administradores atuais podem promover outros membros ou resetar permissões.
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
