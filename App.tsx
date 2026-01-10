@@ -97,26 +97,33 @@ const App: React.FC = () => {
   const handleClearAll = () => setNotifications([]);
 
   const addNewProject = async () => {
-    const newProjectData: Omit<Project, 'id'> = {
-      clientName: 'Novo Cliente Solar',
-      address: 'Endereço a definir',
-      status: ProjectStatus.VISTORIA,
-      powerKwp: 0,
-      estimatedProduction: 0,
-      startDate: new Date().toISOString().split('T')[0],
-      notes: ''
-    };
+    try {
+      const newProjectData: Omit<Project, 'id'> = {
+        clientName: 'Novo Cliente Solar',
+        address: 'Endereço a definir',
+        status: ProjectStatus.VISTORIA,
+        powerKwp: 0,
+        estimatedProduction: 0,
+        startDate: new Date().toISOString().split('T')[0],
+        notes: ''
+      };
 
-    const created = await createProject(newProjectData);
-    if (created) {
-      setProjects([created, ...projects]);
-      setSelectedProject(created);
+      const created = await createProject(newProjectData);
+      if (created) {
+        setProjects(prev => [created, ...prev]);
+        setSelectedProject(created);
 
-      addNotification({
-        title: 'Novo Projeto Criado',
-        message: `O projeto para "${created.clientName}" foi iniciado com sucesso.`,
-        type: 'info'
-      });
+        addNotification({
+          title: 'Novo Projeto Criado',
+          message: `O projeto para "${created.clientName}" foi iniciado com sucesso.`,
+          type: 'info'
+        });
+      } else {
+        alert('Falha ao gravar no Supabase. Verifique sua conexão.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro inesperado: ' + err.message);
     }
   };
 
@@ -142,6 +149,7 @@ const App: React.FC = () => {
         }
         return vistoriaProjects;
       case 'engenharia':
+        if (!isEngenhariaRole) return [];
         return projects.filter(p => [
           ProjectStatus.ANALISE,
           ProjectStatus.SUBMISSAO,
@@ -218,13 +226,15 @@ const App: React.FC = () => {
               label="Vistorias"
               badge={getFilteredProjects().filter(p => p.status === ProjectStatus.VISTORIA).length}
             />
-            <SidebarLink
-              active={view === 'engenharia'}
-              onClick={() => handleMenuClick('engenharia')}
-              icon="fa-pencil-ruler"
-              label="Engenharia"
-              badge={projects.filter(p => p.status === ProjectStatus.ANALISE || p.status === ProjectStatus.AGUARDANDO_ANALISE).length}
-            />
+            {isEngenhariaRole && (
+              <SidebarLink
+                active={view === 'engenharia'}
+                onClick={() => handleMenuClick('engenharia')}
+                icon="fa-pencil-ruler"
+                label="Engenharia"
+                badge={projects.filter(p => p.status === ProjectStatus.ANALISE || p.status === ProjectStatus.AGUARDANDO_ANALISE).length}
+              />
+            )}
 
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-6 mb-4 px-4">Recursos</p>
             <SidebarLink
@@ -325,7 +335,7 @@ const App: React.FC = () => {
             <EquipmentList />
           ) : (view === 'dashboard' && isEngenhariaRole) ? (
             <Dashboard projects={projects} />
-          ) : view === 'engenharia' ? (
+          ) : (view === 'engenharia' && isEngenhariaRole) ? (
             <KanbanBoard projects={projects} onSelectProject={setSelectedProject} />
           ) : view === 'vistorias' ? (
             <SurveyList
