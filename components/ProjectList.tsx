@@ -10,28 +10,28 @@ interface ProjectListProps {
 
 const ProjectList: React.FC<ProjectListProps> = ({ projects, onSelectProject }) => {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
             <tr>
-              <th className="px-6 py-4 text-sm font-semibold text-slate-600">Cliente</th>
+              <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Cliente</th>
               <th className="px-6 py-4 text-sm font-semibold text-slate-600">Potência (kWp)</th>
               <th className="px-6 py-4 text-sm font-semibold text-slate-600">Status</th>
               <th className="px-6 py-4 text-sm font-semibold text-slate-600">Data Início</th>
               <th className="px-6 py-4 text-sm font-semibold text-slate-600">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {projects.map((project) => (
-              <tr 
-                key={project.id} 
-                className="hover:bg-slate-50 transition-colors cursor-pointer"
+              <tr
+                key={project.id}
+                className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 onClick={() => onSelectProject(project)}
               >
                 <td className="px-6 py-4">
                   <div>
-                    <p className="text-sm font-bold text-slate-900">{project.clientName}</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{project.clientName}</p>
                     <p className="text-xs text-slate-500">{project.address}</p>
                   </div>
                 </td>
@@ -44,7 +44,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onSelectProject }) 
                     {project.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-600">
+                <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
                   {new Date(project.startDate).toLocaleDateString('pt-BR')}
                 </td>
                 <td className="px-6 py-4">

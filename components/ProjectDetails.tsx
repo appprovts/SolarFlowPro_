@@ -10,7 +10,8 @@ interface ProjectDetailsProps {
   currentUser: User;
   onUpdate: (updated: Project) => void;
   onClose: () => void;
-  onNotify: (n: Omit<Notification, 'id' | 'timestamp' | 'isRead'>) => void;
+  onNotify: (n: Omit<Notification, 'id' | 'timestamp' | 'isRead' | 'userId'> & { userId?: string }) => void;
+  onSelectProject?: (p: Project | null) => void;
 }
 
 const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, onUpdate, onClose, onNotify }) => {
@@ -23,7 +24,16 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
   const [editedProject, setEditedProject] = useState<Project>(project);
 
   // Lista de membros para atribuição
-  const MOCK_INTEGRATORS = ['João Gabriel', 'João Técnico', 'Maria Solar', 'Carlos Instalações', 'Pedro Campo'];
+  const MOCK_INTEGRATORS = [
+    'João Gabriel',
+    'João Técnico',
+    'Maria Solar',
+    'Carlos Instalações',
+    'Pedro Campo',
+    currentUser.role === UserRole.INTEGRADOR ? currentUser.name : null,
+    project.assignedIntegrator
+  ].filter((name, index, self) => name && self.indexOf(name) === index) as string[];
+
   const MOCK_ENGINEERS = ['Altamirandus', 'Maria Engenheira', 'Carlos Admin'];
 
   const handleSaveChanges = () => {
@@ -199,7 +209,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
               <div className="md:col-span-2 space-y-6">
                 <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold">Informações do Projeto e Cliente</h3>
+                    <h3 className="text-lg font-bold dark:text-white">Informações do Projeto e Cliente</h3>
                     {isEngenharia && (
                       <button onClick={() => setEditMode(!editMode)} className="text-sm text-blue-600 font-bold hover:underline">
                         <i className={`fas ${editMode ? 'fa-times' : 'fa-edit'} mr-1`}></i>
@@ -213,31 +223,31 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                       <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Cliente</label>
                       {editMode ? (
                         <input
-                          className="w-full rounded-lg border-slate-200 text-sm"
+                          className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white"
                           value={editedProject.clientName}
                           onChange={e => setEditedProject({ ...editedProject, clientName: e.target.value })}
                         />
                       ) : (
-                        <p className="text-slate-900 font-semibold">{project.clientName}</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{project.clientName}</p>
                       )}
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Endereço</label>
                       {editMode ? (
                         <input
-                          className="w-full rounded-lg border-slate-200 text-sm"
+                          className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white"
                           value={editedProject.address}
                           onChange={e => setEditedProject({ ...editedProject, address: e.target.value })}
                         />
                       ) : (
-                        <p className="text-slate-900 font-semibold">{project.address}</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{project.address}</p>
                       )}
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Integrador Responsável</label>
                       {editMode ? (
                         <select
-                          className="w-full rounded-lg border-slate-200 text-sm"
+                          className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white"
                           value={editedProject.assignedIntegrator || ''}
                           onChange={e => setEditedProject({ ...editedProject, assignedIntegrator: e.target.value })}
                         >
@@ -245,7 +255,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                           {MOCK_INTEGRATORS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                         </select>
                       ) : (
-                        <p className="text-slate-900 font-semibold">{project.assignedIntegrator || 'Não atribuído'}</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{project.assignedIntegrator || 'Não atribuído'}</p>
                       )}
                     </div>
                     <div>
@@ -259,12 +269,12 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                       {editMode ? (
                         <input
                           type="number"
-                          className="w-full rounded-lg border-slate-200 text-sm"
+                          className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white"
                           value={editedProject.powerKwp}
                           onChange={e => setEditedProject({ ...editedProject, powerKwp: Number(e.target.value) })}
                         />
                       ) : (
-                        <p className="text-slate-900 font-semibold">{project.powerKwp} kWp</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{project.powerKwp} kWp</p>
                       )}
                     </div>
                   </div>
@@ -281,17 +291,17 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                   )}
                 </div>
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                  <h3 className="text-lg font-bold mb-4">Notas do Projeto</h3>
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                  <h3 className="text-lg font-bold mb-4 dark:text-white">Notas do Projeto</h3>
                   {editMode ? (
                     <textarea
-                      className="w-full rounded-lg border-slate-200"
+                      className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white"
                       rows={3}
                       value={editedProject.notes}
                       onChange={e => setEditedProject({ ...editedProject, notes: e.target.value })}
                     />
                   ) : (
-                    <p className="text-slate-600 italic whitespace-pre-wrap">{project.notes || 'Nenhuma observação adicionada.'}</p>
+                    <p className="text-slate-600 dark:text-slate-400 italic whitespace-pre-wrap">{project.notes || 'Nenhuma observação adicionada.'}</p>
                   )}
                 </div>
               </div>

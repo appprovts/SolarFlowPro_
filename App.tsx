@@ -12,6 +12,7 @@ import SurveyList from './components/SurveyList';
 import Settings from './components/Settings';
 import { getCurrentUser, signOut } from './services/authService';
 import { getProjects, createProject, updateProject } from './services/projectService';
+import { getNotifications, createNotification, markAsRead as dbMarkAsRead, clearAllNotifications as dbClearAll } from './services/notificationService';
 
 // Initial data will be fetched from Supabase
 
@@ -26,6 +27,7 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const projectsRef = React.useRef<Project[]>([]);
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
@@ -47,7 +49,11 @@ const App: React.FC = () => {
         setCurrentUser(user);
         if (user) {
           const dbProjects = await getProjects();
+          projectsRef.current = dbProjects;
           setProjects(dbProjects);
+
+          const dbNotifications = await getNotifications(user.id);
+          setNotifications(dbNotifications);
         }
       } catch (err) {
         console.error('Erro ao verificar autenticação:', err);
@@ -56,7 +62,23 @@ const App: React.FC = () => {
       }
     };
     checkAuth();
-  }, []);
+
+    // Polling para atualizações e notificações
+    const interval = setInterval(async () => {
+      if (currentUser) {
+        const [dbProjects, dbNotifications] = await Promise.all([
+          getProjects(),
+          getNotifications(currentUser.id)
+        ]);
+
+        projectsRef.current = dbProjects;
+        setProjects(dbProjects);
+        setNotifications(dbNotifications);
+      }
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
+  }, [currentUser]); // Só depende do usuário logado
 
   if (loading) {
     return (
@@ -80,21 +102,34 @@ const App: React.FC = () => {
     }
   };
 
-  const addNotification = (n: Omit<Notification, 'id' | 'timestamp' | 'isRead'>) => {
-    const newNotification: Notification = {
+  const addNotification = async (n: Omit<Notification, 'id' | 'timestamp' | 'isRead' | 'userId'> & { userId?: string }) => {
+    if (!currentUser) return;
+
+    const targetUserId = n.userId || currentUser.id;
+    const created = await createNotification({
       ...n,
-      id: Math.random().toString(36).substr(2, 9),
-      timestamp: new Date(),
-      isRead: false
-    };
-    setNotifications(prev => [newNotification, ...prev]);
+      userId: targetUserId
+    });
+
+    if (created && targetUserId === currentUser.id) {
+      setNotifications(prev => [created, ...prev]);
+    }
   };
 
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  const handleMarkAsRead = async (id: string) => {
+    const success = await dbMarkAsRead(id);
+    if (success) {
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    }
   };
 
-  const handleClearAll = () => setNotifications([]);
+  const handleClearAll = async () => {
+    if (!currentUser) return;
+    const success = await dbClearAll(currentUser.id);
+    if (success) {
+      setNotifications([]);
+    }
+  };
 
   const addNewProject = async () => {
     try {
@@ -236,13 +271,17 @@ const App: React.FC = () => {
               />
             )}
 
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-6 mb-4 px-4">Recursos</p>
-            <SidebarLink
-              active={view === 'equipments'}
-              onClick={() => handleMenuClick('equipments')}
-              icon="fa-tools"
-              label="Equipamentos"
-            />
+            {isEngenhariaRole && (
+              <>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-6 mb-4 px-4">Recursos</p>
+                <SidebarLink
+                  active={view === 'equipments'}
+                  onClick={() => handleMenuClick('equipments')}
+                  icon="fa-tools"
+                  label="Equipamentos"
+                />
+              </>
+            )}
             <SidebarLink
               active={view === 'settings'}
               onClick={() => handleMenuClick('settings')}
@@ -273,12 +312,12 @@ const App: React.FC = () => {
           <div className="flex items-start gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="mt-1 md:hidden w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 shadow-sm"
+              className="mt-1 md:hidden w-10 h-10 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 shadow-sm"
             >
               <i className="fas fa-bars text-xl"></i>
             </button>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
                 {getViewTitle()}
               </h1>
               <p className="text-sm md:text-base text-slate-500 mt-1">
@@ -290,7 +329,7 @@ const App: React.FC = () => {
           <div className="flex items-center gap-3 md:gap-4 relative self-end md:self-auto">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition relative shadow-sm"
+              className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition relative shadow-sm"
             >
               <i className="fas fa-bell text-lg"></i>
               {unreadCount > 0 && (

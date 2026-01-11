@@ -31,7 +31,7 @@ const UserCard: React.FC<UserCardProps> = ({ user, setEditingUserId, onUpdateUse
 
     if (isEditing) {
         return (
-            <div className="bg-white p-4 rounded-xl border border-blue-200 shadow-sm flex flex-col gap-3">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-blue-200 dark:border-blue-900 shadow-sm flex flex-col gap-3">
                 <div className="flex gap-4">
                     <div className="relative w-16 h-16">
                         <img src={editForm.avatar} className="w-16 h-16 rounded-full object-cover" />
@@ -41,13 +41,13 @@ const UserCard: React.FC<UserCardProps> = ({ user, setEditingUserId, onUpdateUse
                     </div>
                     <div className="flex-1 space-y-2">
                         <input
-                            className="w-full text-sm border-slate-200 rounded-lg"
+                            className="w-full text-sm border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg"
                             value={editForm.name}
                             onChange={e => setEditForm({ ...editForm, name: e.target.value })}
                             placeholder="Nome"
                         />
                         <select
-                            className="w-full text-sm border-slate-200 rounded-lg"
+                            className="w-full text-sm border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg"
                             value={editForm.role}
                             onChange={e => setEditForm({ ...editForm, role: e.target.value as UserRole })}
                         >
@@ -66,14 +66,14 @@ const UserCard: React.FC<UserCardProps> = ({ user, setEditingUserId, onUpdateUse
     }
 
     return (
-        <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between hover:shadow-md transition">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between hover:shadow-md transition">
             <div className="flex items-center gap-4">
-                <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full ring-2 ring-slate-100" />
+                <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full ring-2 ring-slate-100 dark:ring-slate-800" />
                 <div>
-                    <h4 className="font-bold text-slate-800">{user.name}</h4>
-                    <span className={`text-xs px-2 py-0.5 rounded-full border ${user.role === UserRole.ADMIN ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                        user.role === UserRole.ENGENHARIA ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                            'bg-blue-50 text-blue-700 border-blue-200'
+                    <h4 className="font-bold text-slate-800 dark:text-white">{user.name}</h4>
+                    <span className={`text-xs px-2 py-0.5 rounded-full border ${user.role === UserRole.ADMIN ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800' :
+                        user.role === UserRole.ENGENHARIA ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' :
+                            'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
                         }`}>
                         {user.role}
                     </span>
@@ -81,7 +81,7 @@ const UserCard: React.FC<UserCardProps> = ({ user, setEditingUserId, onUpdateUse
             </div>
             <button
                 onClick={() => setEditingUserId(user.id)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600"
+                className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-blue-600"
             >
                 <i className="fas fa-edit"></i>
             </button>
@@ -257,9 +257,9 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, onUpdateUser, darkMode
                     </form>
                 </div>
             ) : (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-slate-800">Usuários do Sistema</h2>
+                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">Usuários do Sistema</h2>
                         <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-emerald-700 transition">
                             <i className="fas fa-plus mr-2"></i>Novo Usuário
                         </button>

@@ -25,15 +25,15 @@ const Dashboard: React.FC<DashboardProps> = ({ projects }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Projetos Ativos" value={stats.total} icon="fa-solar-panel" color="text-blue-600" />
-        <StatCard title="Potência Total (kWp)" value={stats.power.toFixed(1)} icon="fa-bolt" color="text-amber-600" />
-        <StatCard title="Aguardando Concessionária" value={stats.pending} icon="fa-file-signature" color="text-purple-600" />
-        <StatCard title="Obras Concluídas" value={stats.completed} icon="fa-check-circle" color="text-emerald-600" />
+        <StatCard title="Projetos Ativos" value={stats.total} icon="fa-solar-panel" color="text-blue-600 dark:text-blue-400" />
+        <StatCard title="Potência Total (kWp)" value={stats.power.toFixed(1)} icon="fa-bolt" color="text-amber-600 dark:text-amber-400" />
+        <StatCard title="Aguardando Concessionária" value={stats.pending} icon="fa-file-signature" color="text-purple-600 dark:text-purple-400" />
+        <StatCard title="Obras Concluídas" value={stats.completed} icon="fa-check-circle" color="text-emerald-600 dark:text-emerald-400" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 className="text-lg font-semibold mb-6 text-slate-800">Status dos Projetos</h3>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+          <h3 className="text-lg font-semibold mb-6 text-slate-800 dark:text-white">Status dos Projetos</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={statusData}>
@@ -47,8 +47,8 @@ const Dashboard: React.FC<DashboardProps> = ({ projects }) => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 className="text-lg font-semibold mb-6 text-slate-800">Distribuição de Fases</h3>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+          <h3 className="text-lg font-semibold mb-6 text-slate-800 dark:text-white">Distribuição de Fases</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -76,12 +76,12 @@ const Dashboard: React.FC<DashboardProps> = ({ projects }) => {
 };
 
 const StatCard = ({ title, value, icon, color }: { title: string; value: string | number; icon: string; color: string }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+  <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-between">
     <div>
-      <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{title}</p>
-      <p className="text-2xl font-bold text-slate-900 mt-1">{value}</p>
+      <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{title}</p>
+      <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{value}</p>
     </div>
-    <div className={`w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center ${color}`}>
+    <div className={`w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center ${color}`}>
       <i className={`fas ${icon} text-xl`}></i>
     </div>
   </div>

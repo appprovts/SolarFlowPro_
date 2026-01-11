@@ -27,9 +27,9 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
   };
 
   return (
-    <div className="absolute top-16 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden flex flex-col max-h-[500px]">
-      <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-        <h3 className="font-bold text-slate-800">Notificações</h3>
+    <div className="absolute top-16 right-0 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden flex flex-col max-h-[500px]">
+      <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800">
+        <h3 className="font-bold text-slate-800 dark:text-white">Notificações</h3>
         <div className="flex gap-2">
           <button
             onClick={onClearAll}
@@ -54,7 +54,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
             {notifications.map((n) => (
               <div
                 key={n.id}
-                className={`p-4 hover:bg-slate-50 transition cursor-pointer relative ${!n.isRead ? 'bg-blue-50/30' : ''}`}
+                className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer relative ${!n.isRead ? 'bg-blue-50/30 dark:bg-blue-900/20' : ''}`}
                 onClick={() => onMarkAsRead(n.id)}
               >
                 {!n.isRead && (
@@ -71,8 +71,8 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                       } text-xs`}></i>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-800 leading-tight">{n.title}</p>
-                    <p className="text-xs text-slate-600 mt-1 line-clamp-2">{n.message}</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-white leading-tight">{n.title}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">{n.message}</p>
                     <p className="text-[10px] text-slate-400 mt-1 font-medium">{formatTime(n.timestamp)}</p>
 
                     {n.action === 'accept_survey' && (
@@ -105,7 +105,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
         )}
       </div>
 
-      <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
+      <div className="p-3 bg-slate-50 dark:bg-slate-800 border-t border-slate-100 dark:border-slate-800 text-center">
         <button className="text-xs font-bold text-slate-500 hover:text-slate-800">
           Ver todas as atividades
         </button>
