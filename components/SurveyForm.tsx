@@ -68,6 +68,13 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
     photos: []
   });
 
+  // Sincronizar dados quando o projeto ou surveyData mudar (importante para Engenharia ver dados recém-chegados)
+  React.useEffect(() => {
+    if (project.surveyData) {
+      setFormData(project.surveyData);
+    }
+  }, [project.surveyData, project.id]);
+
   const [activeStep, setActiveStep] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -142,15 +149,15 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
       case 0: // Dados do Local
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Dados do Local</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b dark:border-slate-800 pb-2">Dados do Local</h3>
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Localização</h4>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider">Localização</h4>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Endereço Completo</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Endereço Completo</label>
                 <input
                   readOnly={readOnly}
-                  className="w-full rounded-xl border-slate-200 bg-white focus:border-blue-500"
+                  className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 />
@@ -158,7 +165,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
 
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="block text-sm font-medium text-slate-700">Coordenadas Geográficas</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400">Coordenadas Geográficas</label>
                   {!readOnly && (
                     <button type="button" onClick={getCurrentLocation} className="text-xs text-blue-600 hover:underline">
                       <i className="fas fa-crosshairs mr-1"></i>Capturar Agora
@@ -170,7 +177,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                     readOnly={readOnly}
                     placeholder="Latitude"
                     type="number"
-                    className="w-1/2 rounded-xl border-slate-200 bg-white"
+                    className="w-1/2 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.coordinates?.lat || ''}
                     onChange={(e) => setFormData({ ...formData, coordinates: { lat: Number(e.target.value), lng: formData.coordinates?.lng || 0 } })}
                   />
@@ -178,7 +185,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                     readOnly={readOnly}
                     placeholder="Longitude"
                     type="number"
-                    className="w-1/2 rounded-xl border-slate-200 bg-white"
+                    className="w-1/2 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.coordinates?.lng || ''}
                     onChange={(e) => setFormData({ ...formData, coordinates: { lat: formData.coordinates?.lat || 0, lng: Number(e.target.value) } })}
                   />
@@ -186,8 +193,8 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Fotos Específicas</h4>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider">Fotos Específicas</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
                   { label: 'Fachada', field: 'photoFacade' },
@@ -197,10 +204,10 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                   { label: 'Local do Inversor', field: 'photoInverterLocation' },
                 ].map((item) => (
                   <div key={item.field}>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">{item.label}</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">{item.label}</label>
                     <div className="flex items-center gap-2">
                       {formData[item.field as keyof SurveyData] ? (
-                        <div className="relative w-full h-20 bg-slate-200 rounded-lg overflow-hidden">
+                        <div className="relative w-full h-20 bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden">
                           <img src={formData[item.field as keyof SurveyData] as string} className="w-full h-full object-cover" />
                           {!readOnly && (
                             <button
@@ -217,12 +224,12 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                           accept="image/*"
                           capture="environment"
                           disabled={readOnly}
-                          className="block w-full text-sm text-slate-500
+                          className="block w-full text-sm text-slate-500 dark:text-slate-400
                               file:mr-4 file:py-2 file:px-4
                               file:rounded-full file:border-0
                               file:text-sm file:font-semibold
-                              file:bg-blue-50 file:text-blue-700
-                              hover:file:bg-blue-100"
+                              file:bg-blue-50 dark:file:bg-blue-900/30 file:text-blue-700 dark:file:text-blue-400
+                              hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50"
                           onChange={(e) => e.target.files?.[0] && handleSingleFile(item.field as keyof SurveyData, e.target.files[0])}
                         />
                       )}
@@ -232,35 +239,35 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Distâncias (Metros)</h4>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider">Distâncias (Metros)</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Medidor até Inversor</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Medidor até Inversor</label>
                   <input
                     type="number"
                     readOnly={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.distMeterInverter || ''}
                     onChange={(e) => setFormData({ ...formData, distMeterInverter: Number(e.target.value) })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Inversor até Placas</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Inversor até Placas</label>
                   <input
                     type="number"
                     readOnly={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.distInverterPanels || ''}
                     onChange={(e) => setFormData({ ...formData, distInverterPanels: Number(e.target.value) })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Inversor até Quadro Interno</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Inversor até Quadro Interno</label>
                   <input
                     type="number"
                     readOnly={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.distInverterInternalPanel || ''}
                     onChange={(e) => setFormData({ ...formData, distInverterInternalPanel: Number(e.target.value) })}
                   />
@@ -272,14 +279,14 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
       case 1: // Telhado
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Características do Telhado</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b dark:border-slate-800 pb-2">Características do Telhado</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de Material</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Tipo de Material</label>
                 <select
                   disabled={readOnly}
-                  className="w-full rounded-xl border-slate-200 bg-slate-50"
+                  className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   value={formData.roofType}
                   onChange={(e) => setFormData({ ...formData, roofType: e.target.value })}
                 >
@@ -292,10 +299,10 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Estado de Conservação</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Estado de Conservação</label>
                 <select
                   disabled={readOnly}
-                  className="w-full rounded-xl border-slate-200 bg-slate-50"
+                  className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   value={formData.roofCondition}
                   onChange={(e) => setFormData({ ...formData, roofCondition: e.target.value })}
                 >
@@ -309,8 +316,8 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Orientação (Multi-seleção)</label>
-                <div className="space-y-1 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Orientação (Multi-seleção)</label>
+                <div className="space-y-1 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
                   {['Norte', 'Nordeste', 'Noroeste', 'Leste', 'Oeste', 'Sul'].map(opt => (
                     <label key={opt} className="flex items-center gap-2">
                       <input
@@ -323,19 +330,19 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                             : formData.roofOrientation.filter(o => o !== opt);
                           setFormData({ ...formData, roofOrientation: newOrientation });
                         }}
-                        className="rounded text-blue-600"
+                        className="rounded text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm">{opt}</span>
+                      <span className="text-sm text-slate-700 dark:text-slate-300">{opt}</span>
                     </label>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Inclinação Estimada (°)</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Inclinação Estimada (°)</label>
                 <input
                   type="number"
                   readOnly={readOnly}
-                  className="w-full rounded-xl border-slate-200 bg-slate-50"
+                  className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   value={formData.inclination}
                   onChange={(e) => setFormData({ ...formData, inclination: Number(e.target.value) })}
                 />
@@ -344,11 +351,11 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Capacidade de Carga</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Capacidade de Carga</label>
                 <input
                   type="text"
                   readOnly={readOnly}
-                  className="w-full rounded-xl border-slate-200 bg-slate-50"
+                  className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   value={formData.roofLoadCapacity || ''}
                   onChange={(e) => setFormData({ ...formData, roofLoadCapacity: e.target.value })}
                   placeholder="Ex: Reforçada, Precisa de análise..."
@@ -360,28 +367,28 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
       case 2: // Elétrica, Consumo e Equipamentos
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Elétrica: Consumo, Conexão e Equipamentos</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b dark:border-slate-800 pb-2">Elétrica: Consumo, Conexão e Equipamentos</h3>
 
             {/* Consumo */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Consumo de Energia</h4>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider mb-3">Consumo de Energia</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Consumo Médio (kWh)</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Consumo Médio (kWh)</label>
                   <input
                     type="number"
                     readOnly={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.averageConsumption}
                     onChange={(e) => setFormData({ ...formData, averageConsumption: Number(e.target.value) })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Demanda Contratada (kW)</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Demanda Contratada (kW)</label>
                   <input
                     type="number"
                     readOnly={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.contractedDemand}
                     onChange={(e) => setFormData({ ...formData, contractedDemand: Number(e.target.value) })}
                   />
@@ -390,22 +397,22 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Histórico (Últimos 12 meses)</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Histórico (Últimos 12 meses)</label>
                   <textarea
                     readOnly={readOnly}
                     rows={3}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.consumptionHistory || ''}
                     onChange={(e) => setFormData({ ...formData, consumptionHistory: e.target.value })}
                     placeholder="Insira os dados de consumo mês a mês..."
                   ></textarea>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Fatura de Energia</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Fatura de Energia</label>
                   <div className="flex items-center gap-2">
                     {formData.invoiceFile ? (
-                      <div className="w-full p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
-                        <span className="text-sm text-emerald-600 font-medium"><i className="fas fa-check-circle mr-1"></i>Fatura anexada</span>
+                      <div className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between">
+                        <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium"><i className="fas fa-check-circle mr-1"></i>Fatura anexada</span>
                         {!readOnly && (
                           <button onClick={() => setFormData({ ...formData, invoiceFile: '' })} className="text-red-500 hover:text-red-700">
                             <i className="fas fa-trash"></i>
@@ -418,30 +425,30 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                         accept="image/*,application/pdf"
                         capture="environment"
                         disabled={readOnly}
-                        className="block w-full text-sm text-slate-500
+                        className="block w-full text-sm text-slate-500 dark:text-slate-400
                            file:mr-4 file:py-2 file:px-4
                            file:rounded-full file:border-0
                            file:text-sm file:font-semibold
-                           file:bg-emerald-50 file:text-emerald-700
-                           hover:file:bg-emerald-100"
+                           file:bg-emerald-50 dark:file:bg-emerald-900/30 file:text-emerald-700 dark:file:text-emerald-400
+                           hover:file:bg-emerald-100 dark:hover:file:bg-emerald-900/50"
                         onChange={(e) => e.target.files?.[0] && handleSingleFile('invoiceFile', e.target.files[0])}
                       />
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">Envie uma foto ou PDF da fatura para extração automática.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Envie uma foto ou PDF da fatura para extração automática.</p>
                 </div>
               </div>
             </div>
 
             {/* Conexão */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Conexão Elétrica</h4>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider mb-3">Conexão Elétrica</h4>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Tipo</label>
                   <select
                     disabled={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.connectionType}
                     onChange={(e) => setFormData({ ...formData, connectionType: e.target.value as any })}
                   >
@@ -451,10 +458,10 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Tensão</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Tensão</label>
                   <select
                     disabled={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.voltage}
                     onChange={(e) => setFormData({ ...formData, voltage: e.target.value as any })}
                   >
@@ -464,11 +471,11 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Local Quadro</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Local Quadro</label>
                   <input
                     type="text"
                     readOnly={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.panelLocation}
                     onChange={(e) => setFormData({ ...formData, panelLocation: e.target.value })}
                   />
@@ -477,26 +484,26 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
             </div>
 
             {/* Equipamentos */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Equipamentos Existentes</h4>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider mb-3">Equipamentos Existentes</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de Equipamento</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Tipo de Equipamento</label>
                   <input
                     type="text"
                     readOnly={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.existingEquipmentType || ''}
                     onChange={(e) => setFormData({ ...formData, existingEquipmentType: e.target.value })}
                     placeholder="Ex: Inversor antigo, Transformador..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Estado de Conservação</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Estado de Conservação</label>
                   <input
                     type="text"
                     readOnly={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.existingEquipmentCondition}
                     onChange={(e) => setFormData({ ...formData, existingEquipmentCondition: e.target.value })}
                     placeholder="Ex: Bom, Regular, Oxidado..."
@@ -511,7 +518,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                   onChange={(e) => setFormData({ ...formData, structureReusePossible: e.target.checked })}
                   className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
                 />
-                <label className="text-sm text-slate-700">Possibilidade de aproveitamento de estruturas existentes</label>
+                <label className="text-sm text-slate-700 dark:text-slate-300">Possibilidade de aproveitamento de estruturas existentes</label>
               </div>
             </div>
           </div>
@@ -519,13 +526,13 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
       case 3: // Sombreamento
         return (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Análise de Sombreamento</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b dark:border-slate-800 pb-2">Análise de Sombreamento</h3>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de Sombreamento</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Tipo de Sombreamento</label>
               <select
                 disabled={readOnly}
-                className="w-full rounded-xl border-slate-200 bg-slate-50 mb-3"
+                className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white mb-3"
                 value={formData.shadingType || 'Nenhum'}
                 onChange={(e) => setFormData({ ...formData, shadingType: e.target.value as any })}
               >
@@ -537,11 +544,11 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Descrição</label>
               <textarea
                 readOnly={readOnly}
                 rows={3}
-                className="w-full rounded-xl border-slate-200 bg-slate-50"
+                className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                 value={formData.shadingDescription || ''}
                 onChange={(e) => setFormData({ ...formData, shadingDescription: e.target.value })}
                 placeholder="Descreva detalhadamente o sombreamento..."
@@ -549,10 +556,10 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Obstáculos Identificados (Fallback)</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Obstáculos Identificados (Fallback)</label>
               <input
                 readOnly={readOnly}
-                className="w-full rounded-xl border-slate-200 bg-slate-50"
+                className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                 value={formData.shadingIssues}
                 onChange={(e) => setFormData({ ...formData, shadingIssues: e.target.value })}
                 placeholder="Árvores, prédios vizinhos, chaminés, platibandas..."
@@ -563,16 +570,16 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
       case 4: // Extras e Doc
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Cliente e Documentação</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b dark:border-slate-800 pb-2">Cliente e Documentação</h3>
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Informações do Cliente</h4>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider mb-3">Informações do Cliente</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Objetivo</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Objetivo</label>
                   <select
                     disabled={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.clientObjectives || 'Vistoria Inicial'}
                     onChange={(e) => setFormData({ ...formData, clientObjectives: e.target.value })}
                   >
@@ -584,10 +591,10 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Disponibilidade Investimento</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Disponibilidade Investimento</label>
                   <select
                     disabled={readOnly}
-                    className="w-full rounded-xl border-slate-200 bg-white"
+                    className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     value={formData.investmentAvailability || 'Imediata'}
                     onChange={(e) => setFormData({ ...formData, investmentAvailability: e.target.value })}
                   >
@@ -599,11 +606,11 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                 </div>
               </div>
               <div className="mt-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Foto Documento (CNH/Profissional)</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Foto Documento (CNH/Profissional)</label>
                 <div className="flex items-center gap-2">
                   {formData.clientDocPhoto ? (
-                    <div className="w-full p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
-                      <span className="text-sm text-blue-600 font-medium"><i className="fas fa-id-card mr-1"></i>Documento anexado</span>
+                    <div className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between">
+                      <span className="text-sm text-blue-600 dark:text-blue-400 font-medium"><i className="fas fa-id-card mr-1"></i>Documento anexado</span>
                       {!readOnly && (
                         <button onClick={() => setFormData({ ...formData, clientDocPhoto: '' })} className="text-red-500 hover:text-red-700">
                           <i className="fas fa-trash"></i>
@@ -616,12 +623,12 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                       accept="image/*"
                       capture="environment"
                       disabled={readOnly}
-                      className="block w-full text-sm text-slate-500
+                      className="block w-full text-sm text-slate-500 dark:text-slate-400
                            file:mr-4 file:py-2 file:px-4
                            file:rounded-full file:border-0
                            file:text-sm file:font-semibold
-                           file:bg-blue-50 file:text-blue-700
-                           hover:file:bg-blue-100"
+                           file:bg-blue-50 dark:file:bg-blue-900/30 file:text-blue-700 dark:file:text-blue-400
+                           hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50"
                       onChange={(e) => e.target.files?.[0] && handleSingleFile('clientDocPhoto', e.target.files[0])}
                     />
                   )}
@@ -629,8 +636,8 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Checklist de Documentação</h4>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider mb-3">Checklist de Documentação</h4>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <input
@@ -640,7 +647,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                     onChange={(e) => setFormData({ ...formData, hasElectricalProject: e.target.checked })}
                     className="w-5 h-5 rounded text-emerald-500 focus:ring-emerald-500"
                   />
-                  <label className="text-sm text-slate-600">Possui projetos elétricos do imóvel?</label>
+                  <label className="text-sm text-slate-700 dark:text-slate-300">Possui projetos elétricos do imóvel?</label>
                 </div>
                 <div className="flex items-center gap-3">
                   <input
@@ -650,15 +657,15 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
                     onChange={(e) => setFormData({ ...formData, hasPropertyDeed: e.target.checked })}
                     className="w-5 h-5 rounded text-emerald-500 focus:ring-emerald-500"
                   />
-                  <label className="text-sm text-slate-600">Possui escritura/matrícula do imóvel?</label>
+                  <label className="text-sm text-slate-700 dark:text-slate-300">Possui escritura/matrícula do imóvel?</label>
                 </div>
               </div>
               <div className="mt-3">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Observações sobre documentos</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-400 mb-1">Observações sobre documentos</label>
                 <input
                   type="text"
                   readOnly={readOnly}
-                  className="w-full rounded-xl border-slate-200 bg-white"
+                  className="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   value={formData.documentsNotes || ''}
                   onChange={(e) => setFormData({ ...formData, documentsNotes: e.target.value })}
                   placeholder="Ex: Projeto elétrico desatualizado..."
@@ -670,8 +677,8 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
       case 5: // Fotos
         return (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Registro Fotográfico</h3>
-            <p className="text-sm text-slate-500 mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b dark:border-slate-800 pb-2">Registro Fotográfico</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
               <i className="fas fa-info-circle mr-2"></i>
               É necessário enviar pelo menos 3 fotos (Telhado, Quadro de Energia, Visão Geral).
             </p>
@@ -689,17 +696,17 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
             {!readOnly && (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-300 rounded-2xl hover:bg-slate-50 cursor-pointer transition-colors"
+                className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
               >
-                <i className="fas fa-cloud-upload-alt text-4xl text-slate-400 mb-3"></i>
-                <p className="text-slate-600 font-medium">Clique para adicionar fotos</p>
-                <p className="text-slate-400 text-sm">ou arraste os arquivos aqui</p>
+                <i className="fas fa-cloud-upload-alt text-4xl text-slate-400 dark:text-slate-500 mb-3"></i>
+                <p className="text-slate-700 dark:text-slate-300 font-medium">Clique para adicionar fotos</p>
+                <p className="text-slate-500 dark:text-slate-500 text-sm">ou arraste os arquivos aqui</p>
               </div>
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
               {formData.photos.map((photo, index) => (
-                <div key={index} className="relative group aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
+                <div key={index} className="relative group aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
                   <img src={photo} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
                   {!readOnly && (
                     <button
@@ -718,7 +725,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
             </div>
 
             {formData.photos.length < 3 && !readOnly && (
-              <p className="text-red-500 text-sm font-bold mt-2 text-center">
+              <p className="text-red-500 dark:text-red-400 text-sm font-bold mt-2 text-center">
                 Faltam {3 - formData.photos.length} fotos para concluir.
               </p>
             )}
@@ -730,7 +737,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-full md:h-[700px]">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden flex flex-col h-full md:h-[700px] border dark:border-slate-800">
       {/* Stepper Header */}
       <div className="bg-slate-900 text-white p-2 md:p-4">
         <div className="flex justify-between items-center overflow-x-auto pb-2 scrollbar-none gap-2">
@@ -753,17 +760,17 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-slate-950">
         {renderStepContent()}
       </div>
 
       {/* Footer Actions */}
-      <div className="p-4 md:p-6 bg-white border-t border-slate-200 flex justify-between items-center mt-auto">
+      <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center mt-auto">
         <button
           type="button"
           onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
           disabled={activeStep === 0}
-          className="px-4 md:px-6 py-2 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50 font-semibold text-sm md:text-base"
+          className="px-4 md:px-6 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 font-semibold text-sm md:text-base"
         >
           Voltar
         </button>
@@ -783,7 +790,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ project, onSave, readOnly }) =>
           <button
             type="button"
             onClick={() => setActiveStep(Math.min(steps.length - 1, activeStep + 1))}
-            className="bg-slate-900 text-white px-6 md:px-8 py-2 md:py-3 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg flex items-center gap-2 text-sm md:text-base"
+            className="bg-slate-900 dark:bg-amber-400 text-white dark:text-slate-900 px-6 md:px-8 py-2 md:py-3 rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-amber-500 transition shadow-lg flex items-center gap-2 text-sm md:text-base"
           >
             Próximo
             <i className="fas fa-arrow-right text-xs md:text-sm"></i>

@@ -188,7 +188,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                 {STATUS_ICONS[project.status]} {project.status}
               </span>
             </div>
-            <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1 truncate">{project.address}</p>
+            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1 truncate">{project.address}</p>
           </div>
           <button onClick={onClose} className="min-w-[40px] h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400">
             <i className="fas fa-times text-xl"></i>
@@ -199,7 +199,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
         <div className="flex bg-white dark:bg-slate-900 px-4 md:px-8 border-b border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-hide">
           <TabButton active={activeTab === 'info'} onClick={() => setActiveTab('info')} label="Geral" />
           <TabButton active={activeTab === 'vistoria'} onClick={() => setActiveTab('vistoria')} label="Vistoria" />
-          {isEngenharia && <TabButton active={activeTab === 'documentos'} onClick={() => setActiveTab('documentos')} label="Docs" />}
+          {isManagement && <TabButton active={activeTab === 'documentos'} onClick={() => setActiveTab('documentos')} label="Docs" />}
         </div>
 
         {/* Content */}
@@ -210,7 +210,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                 <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold dark:text-white">Informações do Projeto e Cliente</h3>
-                    {isEngenharia && (
+                    {isManagement && (
                       <button onClick={() => setEditMode(!editMode)} className="text-sm text-blue-600 font-bold hover:underline">
                         <i className={`fas ${editMode ? 'fa-times' : 'fa-edit'} mr-1`}></i>
                         {editMode ? 'Cancelar Edição' : 'Editar Dados'}
@@ -220,7 +220,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Cliente</label>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Cliente</label>
                       {editMode ? (
                         <input
                           className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white"
@@ -232,7 +232,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Endereço</label>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Endereço</label>
                       {editMode ? (
                         <input
                           className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white"
@@ -244,7 +244,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Integrador Responsável</label>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Integrador Responsável</label>
                       {editMode ? (
                         <select
                           className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white"
@@ -259,13 +259,13 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Status</label>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Status</label>
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold border inline-block ${STATUS_COLORS[project.status]}`}>
                         {STATUS_ICONS[project.status]} {project.status}
                       </span>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Potência (kWp)</label>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Potência (kWp)</label>
                       {editMode ? (
                         <input
                           type="number"
@@ -301,7 +301,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                       onChange={e => setEditedProject({ ...editedProject, notes: e.target.value })}
                     />
                   ) : (
-                    <p className="text-slate-600 dark:text-slate-400 italic whitespace-pre-wrap">{project.notes || 'Nenhuma observação adicionada.'}</p>
+                    <p className="text-slate-800 dark:text-slate-300 italic whitespace-pre-wrap">{project.notes || 'Nenhuma observação adicionada.'}</p>
                   )}
                 </div>
               </div>
@@ -401,9 +401,9 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
 
           {activeTab === 'documentos' && isEngenharia && (
             <div className="space-y-6">
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-bold">Arquivos Gerados</h3>
+                  <h3 className="text-lg font-bold dark:text-white">Arquivos Gerados</h3>
                   <button
                     onClick={handleGenerateMemorial}
                     disabled={loading || project.status === ProjectStatus.VISTORIA}
@@ -415,11 +415,11 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, currentUser, o
                 </div>
 
                 {memorial ? (
-                  <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 font-serif whitespace-pre-wrap text-slate-800">
+                  <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 font-serif whitespace-pre-wrap text-slate-800 dark:text-slate-200">
                     {memorial}
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
+                  <div className="text-center py-12 text-slate-500 dark:text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
                     <i className="far fa-file-alt text-4xl mb-3"></i>
                     <p>Nenhum documento gerado para este projeto ainda.</p>
                   </div>

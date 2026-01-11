@@ -74,6 +74,13 @@ const App: React.FC = () => {
         projectsRef.current = dbProjects;
         setProjects(dbProjects);
         setNotifications(dbNotifications);
+
+        // Atualizar o projeto selecionado se ele estiver aberto
+        setSelectedProject((current) => {
+          if (!current) return null;
+          const updated = dbProjects.find(p => p.id === current.id);
+          return updated || current;
+        });
       }
     }, 30000); // 30 segundos
 
@@ -176,23 +183,27 @@ const App: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const getFilteredProjects = () => {
+    // Regra global: Integradores só veem vistorias atribuídas a eles
+    let baseProjects = projects;
+    if (currentUser && currentUser.role === UserRole.INTEGRADOR) {
+      baseProjects = projects.filter(p => p.assignedIntegrator === currentUser.name);
+    }
+
     switch (view) {
       case 'vistorias':
-        const vistoriaProjects = projects.filter(p => p.status === ProjectStatus.VISTORIA || p.status === ProjectStatus.AGUARDANDO_ANALISE);
-        if (currentUser.role === UserRole.INTEGRADOR) {
-          return vistoriaProjects.filter(p => p.assignedIntegrator === currentUser.name);
-        }
-        return vistoriaProjects;
+        return baseProjects.filter(p => p.status === ProjectStatus.VISTORIA || p.status === ProjectStatus.AGUARDANDO_ANALISE);
       case 'engenharia':
         if (!isEngenhariaRole) return [];
         return projects.filter(p => [
           ProjectStatus.ANALISE,
           ProjectStatus.SUBMISSAO,
           ProjectStatus.INSTALACAO,
-          ProjectStatus.COMISSIONAMENTO
+          ProjectStatus.COMISSIONAMENTO,
+          ProjectStatus.AGUARDANDO_ANALISE
         ].includes(p.status));
+      case 'projects':
       default:
-        return projects;
+        return baseProjects;
     }
   };
 
@@ -398,6 +409,7 @@ const App: React.FC = () => {
 
         {selectedProject && (
           <ProjectDetails
+            key={selectedProject.id}
             project={selectedProject}
             currentUser={currentUser}
             onUpdate={handleUpdateProject}

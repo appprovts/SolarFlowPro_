@@ -41,11 +41,11 @@ const SurveyList: React.FC<SurveyListProps> = ({ projects, onSelectProject }) =>
                     <div className="p-6 bg-slate-50/50 dark:bg-slate-800/30">
                         <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                                <p className="text-xs text-slate-400 font-semibold uppercase">Potência</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Potência</p>
                                 <p className="text-slate-900 dark:text-white font-bold">{project.powerKwp} kWp</p>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-400 font-semibold uppercase">Data</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Data</p>
                                 <p className="text-slate-900 dark:text-white font-bold">{new Date(project.startDate).toLocaleDateString()}</p>
                             </div>
                         </div>
