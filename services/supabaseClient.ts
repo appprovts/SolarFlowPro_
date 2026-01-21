@@ -18,6 +18,65 @@ const supabaseAnonKey = cleanEnvValue(
   ''
 );
 
+
+
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      storage: {
+        getItem: (key) => {
+          try {
+            return localStorage.getItem(key);
+          } catch (error) {
+            console.error('Error accessing localStorage:', error);
+            return null;
+          }
+        },
+        setItem: (key, value) => {
+          try {
+            localStorage.setItem(key, value);
+          } catch (error: any) {
+            // Handle QuotaExceededError
+            if (error.name === 'QuotaExceededError' ||
+              error.message?.includes('exceeded the quota')) {
+              console.warn('⚠️ LocalStorage full! Clean up old Supabase sessions...');
+
+              try {
+                // Clear old Supabase keys that are not the current one
+                Object.keys(localStorage).forEach((k) => {
+                  if (k.startsWith('sb-') && k !== key) {
+                    localStorage.removeItem(k);
+                  }
+                });
+
+                // Try setting again
+                localStorage.setItem(key, value);
+                console.log('✅ Recovered from storage quota error.');
+              } catch (retryError) {
+                console.error('❌ Failed to recover from storage limit:', retryError);
+              }
+            } else {
+              console.error('Error saving to localStorage:', error);
+            }
+          }
+        },
+        removeItem: (key) => {
+          try {
+            localStorage.removeItem(key);
+          } catch (error) {
+            console.error('Error removing from localStorage:', error);
+          }
+        },
+      },
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  }
+);
+
 // Diagnóstico em desenvolvimento
 if (import.meta.env.DEV) {
   if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
@@ -27,10 +86,16 @@ if (import.meta.env.DEV) {
   } else {
     console.log('✅ Supabase: Configuração carregada com sucesso.');
     console.log('Projeto:', supabaseUrl.split('//')[1]?.split('.')[0]);
+
+    // Teste de conexão real
+    (async () => {
+      try {
+        const { error } = await supabase.auth.getSession();
+        if (error) throw error;
+        console.log('🟢 Supabase: Conexão estabelecida com sucesso!');
+      } catch (err: any) {
+        console.error('🔴 Supabase: Falha na conexão:', err.message);
+      }
+    })();
   }
 }
-
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
-);
