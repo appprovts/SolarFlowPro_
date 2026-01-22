@@ -116,9 +116,17 @@ export const shouldAutoLogout = async (maxDurationMinutes: number = 60): Promise
         const currentTime = Date.now();
         const durationMinutes = (currentTime - lastSignInTime) / (1000 * 60);
 
+
         return durationMinutes > maxDurationMinutes;
     } catch (error) {
         console.error('Erro ao verificar tempo de sessão:', error);
         return false;
     }
+};
+
+export const resetPassword = async (email: string): Promise<{ error: any }> => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin, // Redireciona para a home após clicar no link
+    });
+    return { error };
 };
