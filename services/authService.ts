@@ -103,5 +103,22 @@ export const updateUser = async (user: User): Promise<{ user: User | null; error
         return { user: updatedUser, error: null };
     }
 
+
     return { user: null, error: new Error('Ocorreu um erro ao atualizar os dados.') };
+};
+
+export const shouldAutoLogout = async (maxDurationMinutes: number = 60): Promise<boolean> => {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.last_sign_in_at) return false;
+
+        const lastSignInTime = new Date(session.user.last_sign_in_at).getTime();
+        const currentTime = Date.now();
+        const durationMinutes = (currentTime - lastSignInTime) / (1000 * 60);
+
+        return durationMinutes > maxDurationMinutes;
+    } catch (error) {
+        console.error('Erro ao verificar tempo de sessão:', error);
+        return false;
+    }
 };

@@ -10,7 +10,7 @@ import KanbanBoard from './components/KanbanBoard';
 import EquipmentList from './components/EquipmentList';
 import SurveyList from './components/SurveyList';
 import Settings from './components/Settings';
-import { getCurrentUser, signOut } from './services/authService';
+import { getCurrentUser, signOut, shouldAutoLogout } from './services/authService';
 import { getProjects, createProject, updateProject } from './services/projectService';
 import { getNotifications, createNotification, markAsRead as dbMarkAsRead, clearAllNotifications as dbClearAll } from './services/notificationService';
 
@@ -66,6 +66,16 @@ const App: React.FC = () => {
     // Polling para atualizações e notificações
     const interval = setInterval(async () => {
       if (currentUser) {
+        // Verificar expiração de sessão (60 minutos)
+        const isExpired = await shouldAutoLogout(60);
+        if (isExpired) {
+          console.warn('⚠️ Sessão expirada (>1h). Realizando logout forçado.');
+          alert('Sua sessão excedeu o limite de 1 hora. Para evitar erros de sistema, você será desconectado.');
+          await handleLogout();
+          return;
+        }
+
+
         const [dbProjects, dbNotifications] = await Promise.all([
           getProjects(),
           getNotifications(currentUser.id)
