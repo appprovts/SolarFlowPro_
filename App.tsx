@@ -105,6 +105,20 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [currentUser?.id]);
 
+  // USUÁRIO DE DESENVOLVIMENTO (PARA PULAR LOGIN)
+  const devUser: User = {
+    id: 'dev-user-id',
+    name: 'Desenvolvedor (Acesso Direto)',
+    role: UserRole.ADMIN,
+    avatar: `https://i.pravatar.cc/150?u=dev-admin`
+  };
+
+  useEffect(() => {
+    // Forçar usuário logado e parar loading
+    setCurrentUser(devUser);
+    setLoading(false);
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900 text-amber-400">
@@ -113,9 +127,12 @@ const App: React.FC = () => {
     );
   }
 
+  // Comentado para permitir acesso sem login
+  /*
   if (!currentUser) {
-    return <Login onLogin={() => { }} />; // onLogin agora é ignorado pelo listener global
+    return <Login onLogin={() => {}} />;
   }
+  */
 
 
   const isEngenhariaRole = currentUser.role === UserRole.ENGENHARIA || currentUser.role === UserRole.ADMIN;
