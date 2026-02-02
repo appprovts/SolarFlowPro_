@@ -11,6 +11,7 @@ import EquipmentList from './components/EquipmentList';
 import SurveyList from './components/SurveyList';
 import Settings from './components/Settings';
 import { getCurrentUser, signOut, shouldAutoLogout } from './services/authService';
+import { supabase } from './services/supabaseClient';
 import { getProjects, createProject, updateProject } from './services/projectService';
 import { getNotifications, createNotification, markAsRead as dbMarkAsRead, clearAllNotifications as dbClearAll } from './services/notificationService';
 
@@ -42,40 +43,68 @@ const App: React.FC = () => {
     }
   }, [darkMode]);
 
+  // Efeito 1: Verificação Inicial e Listener de Auth
   useEffect(() => {
-    const checkAuth = async () => {
+    const initAuth = async () => {
       try {
         const user = await getCurrentUser();
         setCurrentUser(user);
-        if (user) {
-          const dbProjects = await getProjects();
-          projectsRef.current = dbProjects;
-          setProjects(dbProjects);
-
-          const dbNotifications = await getNotifications(user.id);
-          setNotifications(dbNotifications);
-        }
       } catch (err) {
-        console.error('Erro ao verificar autenticação:', err);
+        console.error('Erro ao verificar autenticação inicial:', err);
       } finally {
         setLoading(false);
       }
     };
-    checkAuth();
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Efeito 2: Carregamento de Dados e Polling (Depende apenas do currentUser)
+  useEffect(() => {
+    if (!currentUser) {
+      setProjects([]);
+      setNotifications([]);
+      return;
+    }
+
+    const loadInitialData = async () => {
+      try {
+        const [dbProjects, dbNotifications] = await Promise.all([
+          getProjects(),
+          getNotifications(currentUser.id)
+        ]);
+        setProjects(dbProjects);
+        projectsRef.current = dbProjects;
+        setNotifications(dbNotifications);
+      } catch (err) {
+        console.error('Erro ao carregar dados iniciais:', err);
+      }
+    };
+
+    loadInitialData();
 
     // Polling para atualizações e notificações
     const interval = setInterval(async () => {
-      if (currentUser) {
-        // Verificar expiração de sessão (60 minutos)
-        const isExpired = await shouldAutoLogout(60);
-        if (isExpired) {
-          console.warn('⚠️ Sessão expirada (>1h). Realizando logout forçado.');
-          alert('Sua sessão excedeu o limite de 1 hora. Para evitar erros de sistema, você será desconectado.');
-          await handleLogout();
-          return;
-        }
+      // Verificar expiração de sessão (60 minutos)
+      const isExpired = await shouldAutoLogout(60);
+      if (isExpired) {
+        console.warn('⚠️ Sessão expirada (>1h). Realizando logout forçado.');
+        alert('Sua sessão excedeu o limite de 1 hora. Para evitar erros de sistema, você será desconectado.');
+        await handleLogout();
+        return;
+      }
 
-
+      try {
         const [dbProjects, dbNotifications] = await Promise.all([
           getProjects(),
           getNotifications(currentUser.id)
@@ -91,11 +120,14 @@ const App: React.FC = () => {
           const updated = dbProjects.find(p => p.id === current.id);
           return updated || current;
         });
+      } catch (err) {
+        console.error('Erro no polling:', err);
       }
     }, 30000); // 30 segundos
 
     return () => clearInterval(interval);
-  }, [currentUser]); // Só depende do usuário logado
+  }, [currentUser?.id]); // Usamos id para evitar triggers desnecessários se o objeto mudar mas o ID for o mesmo
+
 
   if (loading) {
     return (
