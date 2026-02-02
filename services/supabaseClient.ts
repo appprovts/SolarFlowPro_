@@ -14,6 +14,42 @@ const supabaseAnonKey = cleanEnvValue(
   import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 );
 
+const safeStorage = {
+  getItem: (key: string) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (error: any) {
+      if (error.name === 'QuotaExceededError' || error.message?.includes('quota')) {
+        console.warn('⚠️ LocalStorage cheio! Tentando limpar sessões antigas...');
+        try {
+          // Limpa todas as chaves do Supabase exceto a atual
+          Object.keys(localStorage).forEach(k => {
+            if (k.startsWith('sb-') && k !== key) {
+              localStorage.removeItem(k);
+            }
+          });
+          // Tenta gravar novamente
+          localStorage.setItem(key, value);
+        } catch (retryError) {
+          console.error('❌ Falha crítica no Storage:', retryError);
+        }
+      }
+    }
+  },
+  removeItem: (key: string) => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) { }
+  }
+};
+
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key',
@@ -22,7 +58,7 @@ export const supabase = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      storage: localStorage
+      storage: safeStorage
     },
   }
 );
