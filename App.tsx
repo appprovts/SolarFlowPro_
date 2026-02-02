@@ -20,8 +20,14 @@ import { getNotifications, createNotification, markAsRead as dbMarkAsRead, clear
 type AppView = 'dashboard' | 'projects' | 'vistorias' | 'engenharia' | 'equipments' | 'settings';
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // USUÁRIO DE DESENVOLVIMENTO (ESTÁTICO)
+  const [currentUser, setCurrentUser] = useState<User | null>({
+    id: 'dev-user-id',
+    name: 'Desenvolvedor (Offline Mode)',
+    role: UserRole.ADMIN,
+    avatar: `https://i.pravatar.cc/150?u=dev-admin`
+  });
+  const [loading, setLoading] = useState(false);
   const [view, setView] = useState<AppView>('dashboard');
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -43,96 +49,13 @@ const App: React.FC = () => {
     }
   }, [darkMode]);
 
-  // Efeito Único de Autenticação
-  useEffect(() => {
-    let mounted = true;
-
-    const checkInitialSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user && mounted) {
-          const user = await getCurrentUser();
-          setCurrentUser(user);
-        }
-      } catch (err) {
-        console.error('Erro ao verificar sessão inicial:', err);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    checkInitialSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔔 Auth Event:', event);
-      if (session?.user) {
-        const user = await getCurrentUser();
-        if (mounted) setCurrentUser(user);
-      } else {
-        if (mounted) setCurrentUser(null);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  // Carregamento de Dados e Polling
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const loadData = async () => {
-      try {
-        const [dbProjects, dbNotifications] = await Promise.all([
-          getProjects(),
-          getNotifications(currentUser.id)
-        ]);
-        if (projectsRef.current.length === 0 || JSON.stringify(dbProjects) !== JSON.stringify(projectsRef.current)) {
-          setProjects(dbProjects);
-          projectsRef.current = dbProjects;
-        }
-        setNotifications(dbNotifications);
-      } catch (err) {
-        console.error('Erro ao carregar dados:', err);
-      }
-    };
-
-    loadData();
-    const interval = setInterval(loadData, 30000);
-
-    return () => clearInterval(interval);
-  }, [currentUser?.id]);
-
-  // USUÁRIO DE DESENVOLVIMENTO (PARA PULAR LOGIN)
-  const devUser: User = {
-    id: 'dev-user-id',
-    name: 'Desenvolvedor (Acesso Direto)',
-    role: UserRole.ADMIN,
-    avatar: `https://i.pravatar.cc/150?u=dev-admin`
-  };
-
-  useEffect(() => {
-    // Forçar usuário logado e parar loading
-    setCurrentUser(devUser);
-    setLoading(false);
-  }, []);
-
-  if (loading) {
+  if (loading || !currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900 text-amber-400">
         <i className="fas fa-circle-notch fa-spin text-4xl"></i>
       </div>
     );
   }
-
-  // Comentado para permitir acesso sem login
-  /*
-  if (!currentUser) {
-    return <Login onLogin={() => {}} />;
-  }
-  */
 
 
   const isEngenhariaRole = currentUser.role === UserRole.ENGENHARIA || currentUser.role === UserRole.ADMIN;
