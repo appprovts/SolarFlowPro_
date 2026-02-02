@@ -43,91 +43,67 @@ const App: React.FC = () => {
     }
   }, [darkMode]);
 
-  // Efeito 1: Verificação Inicial e Listener de Auth
+  // Efeito Único de Autenticação
   useEffect(() => {
-    const initAuth = async () => {
+    let mounted = true;
+
+    const checkInitialSession = async () => {
       try {
-        const user = await getCurrentUser();
-        setCurrentUser(user);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && mounted) {
+          const user = await getCurrentUser();
+          setCurrentUser(user);
+        }
       } catch (err) {
-        console.error('Erro ao verificar autenticação inicial:', err);
+        console.error('Erro ao verificar sessão inicial:', err);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
-    initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    checkInitialSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔔 Auth Event:', event);
       if (session?.user) {
         const user = await getCurrentUser();
-        setCurrentUser(user);
+        if (mounted) setCurrentUser(user);
       } else {
-        setCurrentUser(null);
+        if (mounted) setCurrentUser(null);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Efeito 2: Carregamento de Dados e Polling (Depende apenas do currentUser)
+  // Carregamento de Dados e Polling
   useEffect(() => {
-    if (!currentUser) {
-      setProjects([]);
-      setNotifications([]);
-      return;
-    }
+    if (!currentUser) return;
 
-    const loadInitialData = async () => {
+    const loadData = async () => {
       try {
         const [dbProjects, dbNotifications] = await Promise.all([
           getProjects(),
           getNotifications(currentUser.id)
         ]);
-        setProjects(dbProjects);
-        projectsRef.current = dbProjects;
+        if (projectsRef.current.length === 0 || JSON.stringify(dbProjects) !== JSON.stringify(projectsRef.current)) {
+          setProjects(dbProjects);
+          projectsRef.current = dbProjects;
+        }
         setNotifications(dbNotifications);
       } catch (err) {
-        console.error('Erro ao carregar dados iniciais:', err);
+        console.error('Erro ao carregar dados:', err);
       }
     };
 
-    loadInitialData();
-
-    // Polling para atualizações e notificações
-    const interval = setInterval(async () => {
-      // Verificar expiração de sessão (60 minutos)
-      const isExpired = await shouldAutoLogout(60);
-      if (isExpired) {
-        console.warn('⚠️ Sessão expirada (>1h). Realizando logout forçado.');
-        alert('Sua sessão excedeu o limite de 1 hora. Para evitar erros de sistema, você será desconectado.');
-        await handleLogout();
-        return;
-      }
-
-      try {
-        const [dbProjects, dbNotifications] = await Promise.all([
-          getProjects(),
-          getNotifications(currentUser.id)
-        ]);
-
-        projectsRef.current = dbProjects;
-        setProjects(dbProjects);
-        setNotifications(dbNotifications);
-
-        // Atualizar o projeto selecionado se ele estiver aberto
-        setSelectedProject((current) => {
-          if (!current) return null;
-          const updated = dbProjects.find(p => p.id === current.id);
-          return updated || current;
-        });
-      } catch (err) {
-        console.error('Erro no polling:', err);
-      }
-    }, 30000); // 30 segundos
+    loadData();
+    const interval = setInterval(loadData, 30000);
 
     return () => clearInterval(interval);
-  }, [currentUser?.id]); // Usamos id para evitar triggers desnecessários se o objeto mudar mas o ID for o mesmo
-
+  }, [currentUser?.id]);
 
   if (loading) {
     return (
@@ -138,8 +114,9 @@ const App: React.FC = () => {
   }
 
   if (!currentUser) {
-    return <Login onLogin={setCurrentUser} />;
+    return <Login onLogin={() => { }} />; // onLogin agora é ignorado pelo listener global
   }
+
 
   const isEngenhariaRole = currentUser.role === UserRole.ENGENHARIA || currentUser.role === UserRole.ADMIN;
 
