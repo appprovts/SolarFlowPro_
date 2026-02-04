@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ProjectStatus } from './types';
+import { ProjectStatus } from '../tipos/index';
 
 export const STATUS_COLORS: Record<ProjectStatus, string> = {
   [ProjectStatus.VISTORIA]: 'bg-amber-100 text-amber-700 border-amber-200',

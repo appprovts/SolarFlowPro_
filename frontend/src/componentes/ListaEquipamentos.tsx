@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getEquipment, addEquipment, deleteEquipment, Equipment } from '../services/equipmentService';
-import { getEquipmentSpecs } from '../services/geminiService';
+import { getEquipment, addEquipment, deleteEquipment, Equipment } from '../servicos/equipamentoServico';
+import { getEquipmentSpecs } from '../servicos/geminiServico';
 
 const EquipmentList: React.FC = () => {
     const [items, setItems] = useState<Equipment[]>([]);

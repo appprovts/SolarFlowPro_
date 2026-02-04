@@ -1,5 +1,5 @@
-import { supabase } from './supabaseClient';
-import { Project, ProjectStatus } from '../types';
+import { supabase } from './supabaseCliente';
+import { Project, ProjectStatus } from '../tipos/index';
 
 const mapToProject = (row: any): Project => ({
     id: row.id,

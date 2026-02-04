@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { SurveyData, Project } from '../types';
+import { SurveyData, Project } from '../tipos/index';
 
 interface SurveyFormProps {
   project: Project;

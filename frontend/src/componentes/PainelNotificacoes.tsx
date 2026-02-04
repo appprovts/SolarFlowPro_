@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Notification } from '../types';
+import { Notification } from '../tipos/index';
 
 interface NotificationPanelProps {
   notifications: Notification[];

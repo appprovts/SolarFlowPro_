@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { UserRole, User } from '../types';
-import { signIn, signUp, resetPassword } from '../services/authService';
+import { UserRole, User } from '../tipos/index';
+import { signIn, signUp, resetPassword } from '../servicos/autenticacaoServico';
 
 interface LoginProps {
   onLogin: (user: User) => void;

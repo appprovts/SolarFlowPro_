@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { Project, ProjectStatus, SurveyData, User, UserRole, Notification } from '../types';
-import { STATUS_COLORS, STATUS_ICONS } from '../constants';
-import SurveyForm from './SurveyForm';
-import { analyzeSurvey, generateTechnicalMemorial } from '../services/geminiService';
+import { Project, ProjectStatus, SurveyData, User, UserRole, Notification } from '../tipos/index';
+import { STATUS_COLORS, STATUS_ICONS } from '../constantes/index';
+import SurveyForm from '../paginas/FormularioVistoria';
+import { analyzeSurvey, generateTechnicalMemorial } from '../servicos/geminiServico';
 
 interface ProjectDetailsProps {
   project: Project;

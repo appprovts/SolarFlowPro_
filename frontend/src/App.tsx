@@ -1,19 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { Project, ProjectStatus, User, UserRole, Notification } from './types';
-import Dashboard from './components/Dashboard';
-import ProjectList from './components/ProjectList';
-import ProjectDetails from './components/ProjectDetails';
-import Login from './components/Login';
-import NotificationPanel from './components/NotificationPanel';
-import KanbanBoard from './components/KanbanBoard';
-import EquipmentList from './components/EquipmentList';
-import SurveyList from './components/SurveyList';
-import Settings from './components/Settings';
-import { getCurrentUser, signOut, shouldAutoLogout } from './services/authService';
-import { supabase } from './services/supabaseClient';
-import { getProjects, createProject, updateProject } from './services/projectService';
-import { getNotifications, createNotification, markAsRead as dbMarkAsRead, clearAllNotifications as dbClearAll } from './services/notificationService';
+import { Project, ProjectStatus, User, UserRole, Notification } from './tipos/index';
+import Dashboard from './paginas/Painel';
+import ProjectList from './componentes/ListaProjetos';
+import ProjectDetails from './componentes/DetalhesProjeto';
+import Login from './paginas/Entrar';
+import NotificationPanel from './componentes/PainelNotificacoes';
+import KanbanBoard from './componentes/QuadroKanban';
+import EquipmentList from './componentes/ListaEquipamentos';
+import SurveyList from './componentes/ListaVistorias';
+import Settings from './paginas/Configuracoes';
+import { getCurrentUser, signOut, shouldAutoLogout } from './servicos/autenticacaoServico';
+import { supabase } from './servicos/supabaseCliente';
+import { getProjects, createProject, updateProject } from './servicos/projetoServico';
+import { getNotifications, createNotification, markAsRead as dbMarkAsRead, clearAllNotifications as dbClearAll } from './servicos/notificacaoServico';
 
 // Initial data will be fetched from Supabase
 

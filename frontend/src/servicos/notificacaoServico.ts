@@ -1,5 +1,5 @@
-import { supabase } from './supabaseClient';
-import { Notification } from '../types';
+import { supabase } from './supabaseCliente';
+import { Notification } from '../tipos/index';
 
 const mapToNotification = (row: any): Notification => ({
     id: row.id,

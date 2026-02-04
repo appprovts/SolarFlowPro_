@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Project, ProjectStatus } from '../types';
-import { STATUS_COLORS, STATUS_ICONS } from '../constants';
+import { Project, ProjectStatus } from '../tipos/index';
+import { STATUS_COLORS, STATUS_ICONS } from '../constantes/index';
 
 interface SurveyListProps {
     projects: Project[];

@@ -1,6 +1,6 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Project, SurveyData } from "../types";
+import { Project, SurveyData } from "../tipos/index";
 
 // Initialize the API with the key from environment variables
 const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';

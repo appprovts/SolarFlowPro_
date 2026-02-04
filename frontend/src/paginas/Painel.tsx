@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Project, ProjectStatus } from '../types';
+import { Project, ProjectStatus } from '../tipos/index';
 
 interface DashboardProps {
   projects: Project[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ projects }) => {
+const Painel: React.FC<DashboardProps> = ({ projects }) => {
   const stats = {
     total: projects.length,
     power: projects.reduce((acc, p) => acc + p.powerKwp, 0),
@@ -87,4 +87,4 @@ const StatCard = ({ title, value, icon, color }: { title: string; value: string 
   </div>
 );
 
-export default Dashboard;
+export default Painel;

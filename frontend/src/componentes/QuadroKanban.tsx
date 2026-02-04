@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Project, ProjectStatus } from '../types';
-import { STATUS_COLORS } from '../constants';
+import { Project, ProjectStatus } from '../tipos/index';
+import { STATUS_COLORS } from '../constantes/index';
 
 interface KanbanBoardProps {
   projects: Project[];

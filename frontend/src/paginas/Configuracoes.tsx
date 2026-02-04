@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { User, UserRole } from '../types';
-import { updateUser } from '../services/authService';
+import { User, UserRole } from '../tipos/index';
+import { updateUser } from '../servicos/autenticacaoServico';
 
 interface SettingsProps {
     currentUser: User;
