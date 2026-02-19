@@ -10,34 +10,72 @@ import KanbanBoard from './componentes/QuadroKanban';
 import EquipmentList from './componentes/ListaEquipamentos';
 import SurveyList from './componentes/ListaVistorias';
 import Settings from './paginas/Configuracoes';
-import { getCurrentUser, signOut, shouldAutoLogout } from './servicos/autenticacaoServico';
+import GerenciamentoUsuarios from './paginas/GerenciamentoUsuarios';
+import { getCurrentUser, signOut } from './servicos/autenticacaoServico';
 import { supabase } from './servicos/supabaseCliente';
 import { getProjects, createProject, updateProject } from './servicos/projetoServico';
 import { getNotifications, createNotification, markAsRead as dbMarkAsRead, clearAllNotifications as dbClearAll } from './servicos/notificacaoServico';
 
-// Initial data will be fetched from Supabase
-
-type AppView = 'dashboard' | 'projects' | 'vistorias' | 'engenharia' | 'equipments' | 'settings';
+type AppView = 'dashboard' | 'projects' | 'vistorias' | 'engenharia' | 'equipments' | 'settings' | 'users';
 
 const App: React.FC = () => {
-  // USUÁRIO DE DESENVOLVIMENTO (ESTÁTICO)
-  const [currentUser, setCurrentUser] = useState<User | null>({
-    id: 'dev-user-id',
-    name: 'Desenvolvedor (Offline Mode)',
-    role: UserRole.ADMIN,
-    avatar: `https://i.pravatar.cc/150?u=dev-admin`
-  });
-  const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<AppView>('dashboard');
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const projectsRef = React.useRef<Project[]>([]);
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
+
+  useEffect(() => {
+    const checkUser = async () => {
+      setLoading(true);
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+
+      if (user) {
+        await preloadData(user);
+      }
+      setLoading(false);
+    };
+
+    checkUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+        if (user) await preloadData(user);
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        setProjects([]);
+        setNotifications([]);
+        setView('dashboard');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const preloadData = async (user: User) => {
+    const [projectsData, notificationsData] = await Promise.all([
+      getProjects(),
+      getNotifications(user.id)
+    ]);
+    if (projectsData) setProjects(projectsData);
+    if (notificationsData) setNotifications(notificationsData);
+
+    const isEngenhariaRole = user.role === UserRole.ENGENHARIA || user.role === UserRole.ADMIN;
+    if (view === 'dashboard' || view === 'engenharia' || view === 'equipments') {
+      if (!isEngenhariaRole) setView('projects');
+    }
+  };
 
   useEffect(() => {
     if (darkMode) {
@@ -49,16 +87,23 @@ const App: React.FC = () => {
     }
   }, [darkMode]);
 
-  if (loading || !currentUser) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900 text-amber-400">
-        <i className="fas fa-circle-notch fa-spin text-4xl"></i>
+        <div className="flex flex-col items-center gap-4">
+          <i className="fas fa-circle-notch fa-spin text-4xl"></i>
+          <p className="text-sm font-medium animate-pulse">Carregando SolarFlow Pro...</p>
+        </div>
       </div>
     );
   }
 
+  if (!currentUser) {
+    return <Login onLogin={(user) => setCurrentUser(user)} />;
+  }
 
   const isEngenhariaRole = currentUser.role === UserRole.ENGENHARIA || currentUser.role === UserRole.ADMIN;
+  const isAdmin = currentUser.role === UserRole.ADMIN;
 
   const handleUpdateProject = async (updated: Project) => {
     const result = await updateProject(updated.id, updated);
@@ -131,7 +176,6 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     await signOut();
     setCurrentUser(null);
-    setView('dashboard');
   };
 
   const handleMenuClick = (targetView: AppView) => {
@@ -142,10 +186,9 @@ const App: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const getFilteredProjects = () => {
-    // Regra global: Integradores só veem vistorias atribuídas a eles
     let baseProjects = projects;
     if (currentUser && currentUser.role === UserRole.INTEGRADOR) {
-      baseProjects = projects.filter(p => p.assignedIntegrator === currentUser.name);
+      baseProjects = projects.filter(p => p.assignedIntegrator === currentUser.name || !p.assignedIntegrator);
     }
 
     switch (view) {
@@ -174,13 +217,13 @@ const App: React.FC = () => {
       case 'engenharia': return 'Pipeline de Engenharia e Obras';
       case 'equipments': return 'Catálogo de Equipamentos';
       case 'settings': return 'Configurações da Conta';
+      case 'users': return 'Gestão de Usuários';
       default: return 'SolarFlow Pro';
     }
   };
 
   return (
     <div className={`min-h-screen flex ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} relative transition-colors duration-300`}>
-      {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-slate-900/50 z-20 md:hidden backdrop-blur-sm"
@@ -252,6 +295,16 @@ const App: React.FC = () => {
                 />
               </>
             )}
+
+            {isAdmin && (
+              <SidebarLink
+                active={view === 'users'}
+                onClick={() => handleMenuClick('users')}
+                icon="fa-users-cog"
+                label="Usuários"
+              />
+            )}
+
             <SidebarLink
               active={view === 'settings'}
               onClick={() => handleMenuClick('settings')}
@@ -264,7 +317,7 @@ const App: React.FC = () => {
         <div className="mt-auto p-6 border-t border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src={currentUser.avatar} className="w-10 h-10 rounded-full ring-2 ring-slate-700" alt="Avatar" />
+              <img src={currentUser.avatar} className="w-10 h-10 rounded-full ring-2 ring-slate-700 object-cover" alt="Avatar" />
               <div className="overflow-hidden">
                 <p className="text-sm font-bold truncate max-w-[100px]">{currentUser.name}</p>
                 <p className="text-xs text-slate-400">{currentUser.role}</p>
@@ -326,7 +379,7 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {isEngenhariaRole && view !== 'equipments' && (
+            {isEngenhariaRole && view !== 'equipments' && view !== 'users' && (
               <button
                 onClick={addNewProject}
                 className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold shadow-lg shadow-amber-400/20 transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap"
@@ -340,7 +393,9 @@ const App: React.FC = () => {
         </header>
 
         <div className="animate-in fade-in duration-500 overflow-x-hidden">
-          {view === 'equipments' ? (
+          {view === 'users' && isAdmin ? (
+            <GerenciamentoUsuarios />
+          ) : view === 'equipments' ? (
             <EquipmentList />
           ) : (view === 'dashboard' && isEngenhariaRole) ? (
             <Dashboard projects={projects} />

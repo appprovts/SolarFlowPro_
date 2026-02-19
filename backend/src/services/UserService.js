@@ -1,3 +1,4 @@
+
 const UserModel = require('../models/UserModel');
 
 class UserService {
@@ -7,6 +8,10 @@ class UserService {
 
     async findById(id) {
         return await UserModel.getById(id);
+    }
+
+    async updateRole(id, role) {
+        return await UserModel.updateRole(id, role);
     }
 }
 
