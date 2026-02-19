@@ -13,13 +13,15 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de acesso
+DROP POLICY IF EXISTS "Perfis são visíveis por usuários autenticados" ON public.profiles;
 CREATE POLICY "Perfis são visíveis por usuários autenticados" 
 ON public.profiles FOR SELECT 
 USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Usuários podem atualizar seus próprios perfis" ON public.profiles;
 CREATE POLICY "Usuários podem atualizar seus próprios perfis" 
 ON public.profiles FOR UPDATE 
-USING (auth.uid() = id);
+USING (auth.uid() = id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'Admin');
 
 -- Trigger para criar perfil automaticamente ao cadastrar novo usuário no Auth
 CREATE OR REPLACE FUNCTION public.handle_new_user() 
