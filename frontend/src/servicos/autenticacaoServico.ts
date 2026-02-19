@@ -19,7 +19,7 @@ export const signIn = async (email: string, password: string): Promise<{ user: U
         return { user, error: null };
     }
 
-    return { user: null, error: new Error('No user data') };
+    return { user: null, error: new Error('Dados de usuário não encontrados após login.') };
 };
 
 export const signUp = async (email: string, password: string, name: string, role: UserRole, phone: string): Promise<{ user: User | null; error: any }> => {
@@ -42,12 +42,6 @@ export const signUp = async (email: string, password: string, name: string, role
     }
 
     if (data.user) {
-        console.log('Cadastro realizado com sucesso:', data.user.id);
-
-        if (!data.session) {
-            console.warn('Atenção: E-mail de confirmação enviado. O usuário não terá sessão ativa até confirmar.');
-        }
-
         const user: User = {
             id: data.user.id,
             name: name,
@@ -67,40 +61,44 @@ export const signOut = async () => {
 
 export const getCurrentUser = async (): Promise<User | null> => {
     try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error || !user) return null;
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) return null;
 
-        // Tentar pegar do profiles primeiro para ter o role atualizado
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
+        // Tentar pegar do profiles, mas sem travar se falhar
+        let profile = null;
+        try {
+            const { data, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (!profileError) {
+                profile = data;
+            }
+        } catch (e) {
+            console.warn('Tabela profiles inacessível, usando metadados do Auth.');
+        }
 
         return {
             id: user.id,
-            name: profile?.full_name || user.user_metadata.full_name || user.email?.split('@')[0] || 'User',
+            name: profile?.full_name || user.user_metadata.full_name || user.email?.split('@')[0] || 'Usuário',
             role: (profile?.role as UserRole) || (user.user_metadata.role as UserRole) || UserRole.INTEGRADOR,
             avatar: profile?.avatar_url || user.user_metadata.avatar_url || `https://i.pravatar.cc/150?u=${user.id}`,
             phone: profile?.phone || user.user_metadata.phone || ''
         };
     } catch (err) {
-        console.error('Erro ao buscar usuário atual:', err);
+        console.error('Erro crítico ao buscar usuário atual:', err);
         return null;
     }
 };
 
 export const updateUser = async (user: User): Promise<{ user: User | null; error: any }> => {
     try {
-        // Verificar sessão antes de tentar atualizar
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return { user: null, error: new Error('Sessão expirada. Faça login novamente.') };
 
-        if (sessionError || !session) {
-            console.error('Erro de sessão detectado:', sessionError);
-            return { user: null, error: new Error('Sessão expirada ou não encontrada. Por favor, faça login novamente.') };
-        }
-
-        // 1. Atualizar metadados no Auth
+        // Atualizar Auth
         const { data: authData, error: authError } = await supabase.auth.updateUser({
             data: {
                 full_name: user.name,
@@ -109,28 +107,21 @@ export const updateUser = async (user: User): Promise<{ user: User | null; error
             }
         });
 
-        if (authError) {
-            console.error('Erro ao atualizar Auth:', authError);
-            // Se o erro for especificamente sobre sessão, damos uma mensagem melhor
-            if (authError.message.includes('session')) {
-                return { user: null, error: new Error('Sessão inválida. Tente sair e entrar novamente no sistema.') };
-            }
-            return { user: null, error: authError };
-        }
+        if (authError) return { user: null, error: authError };
 
-        // 2. Atualizar tabela profiles diretamente para garantir consistência
-        const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-                full_name: user.name,
-                avatar_url: user.avatar,
-                phone: user.phone,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', user.id);
-
-        if (profileError) {
-            console.warn('Aviso: Erro ao atualizar tabela profiles, mas Auth foi atualizado:', profileError);
+        // Tentar atualizar tabela profiles
+        try {
+            await supabase
+                .from('profiles')
+                .update({
+                    full_name: user.name,
+                    avatar_url: user.avatar,
+                    phone: user.phone,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', user.id);
+        } catch (e) {
+            console.warn('Não foi possível atualizar a tabela profiles diretamente.');
         }
 
         if (authData.user) {
@@ -144,26 +135,9 @@ export const updateUser = async (user: User): Promise<{ user: User | null; error
             return { user: updatedUser, error: null };
         }
 
-        return { user: null, error: new Error('Erro inesperado ao processar retorno do servidor.') };
+        return { user: null, error: new Error('Erro ao processar retorno do Supabase.') };
     } catch (err: any) {
-        console.error('Erro crítico em updateUser:', err);
         return { user: null, error: err };
-    }
-};
-
-export const shouldAutoLogout = async (maxDurationMinutes: number = 60): Promise<boolean> => {
-    try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user?.last_sign_in_at) return false;
-
-        const lastSignInTime = new Date(session.user.last_sign_in_at).getTime();
-        const currentTime = Date.now();
-        const durationMinutes = (currentTime - lastSignInTime) / (1000 * 60);
-
-        return durationMinutes > maxDurationMinutes;
-    } catch (error) {
-        console.error('Erro ao verificar tempo de sessão:', error);
-        return false;
     }
 };
 

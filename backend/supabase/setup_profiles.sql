@@ -1,5 +1,7 @@
 
--- Tabela de perfis para estender os dados do Auth
+-- Script de configuração e reparo da tabela profiles
+-- Este script garante que a tabela e todas as colunas necessárias existam.
+
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   full_name TEXT,
@@ -8,6 +10,18 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   phone TEXT,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Garantir que colunas específicas existam caso a tabela tenha sido criada sem elas
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='role') THEN
+        ALTER TABLE public.profiles ADD COLUMN role TEXT DEFAULT 'Integrador' CHECK (role IN ('Admin', 'Engenharia', 'Integrador'));
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='phone') THEN
+        ALTER TABLE public.profiles ADD COLUMN phone TEXT;
+    END IF;
+END $$;
 
 -- Habilitar RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

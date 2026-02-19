@@ -31,25 +31,34 @@ const App: React.FC = () => {
     return localStorage.getItem('theme') === 'dark';
   });
 
+  // Estado de estatísticas para o dashboard (caso queira carregar por aqui)
+  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, power: 0 });
+
   useEffect(() => {
     const checkUser = async () => {
       setLoading(true);
-      const user = await getCurrentUser();
-      setCurrentUser(user);
-
-      if (user) {
-        await preloadData(user);
+      try {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+        if (user) {
+          await preloadData(user).catch(e => console.warn('Erro ao carregar dados iniciais:', e));
+        }
+      } catch (err) {
+        console.error('Falha na verificação de sessão:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     checkUser();
 
+    // Listener para mudanças reais no Auth do Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
+      console.log('Evento de Autenticação:', event);
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') && session) {
         const user = await getCurrentUser();
         setCurrentUser(user);
-        if (user) await preloadData(user);
+        if (user) preloadData(user).catch(() => { });
       } else if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
         setProjects([]);
@@ -64,16 +73,21 @@ const App: React.FC = () => {
   }, []);
 
   const preloadData = async (user: User) => {
-    const [projectsData, notificationsData] = await Promise.all([
-      getProjects(),
-      getNotifications(user.id)
-    ]);
-    if (projectsData) setProjects(projectsData);
-    if (notificationsData) setNotifications(notificationsData);
+    try {
+      const [projectsData, notificationsData] = await Promise.all([
+        getProjects().catch(() => []), // Não deixa falhar se a tabela não existir
+        getNotifications(user.id).catch(() => [])
+      ]);
 
-    const isEngenhariaRole = user.role === UserRole.ENGENHARIA || user.role === UserRole.ADMIN;
-    if (view === 'dashboard' || view === 'engenharia' || view === 'equipments') {
-      if (!isEngenhariaRole) setView('projects');
+      if (projectsData) setProjects(projectsData);
+      if (notificationsData) setNotifications(notificationsData);
+
+      const isEngenhariaRole = user.role === UserRole.ENGENHARIA || user.role === UserRole.ADMIN;
+      if (view === 'dashboard' || view === 'engenharia' || view === 'equipments') {
+        if (!isEngenhariaRole) setView('projects');
+      }
+    } catch (err) {
+      console.error('Erro no pré-carregamento:', err);
     }
   };
 
@@ -98,6 +112,7 @@ const App: React.FC = () => {
     );
   }
 
+  // Se não houver usuário, exibe tela de login
   if (!currentUser) {
     return <Login onLogin={(user) => setCurrentUser(user)} />;
   }
@@ -115,13 +130,11 @@ const App: React.FC = () => {
 
   const addNotification = async (n: Omit<Notification, 'id' | 'timestamp' | 'isRead' | 'userId'> & { userId?: string }) => {
     if (!currentUser) return;
-
     const targetUserId = n.userId || currentUser.id;
     const created = await createNotification({
       ...n,
       userId: targetUserId
     });
-
     if (created && targetUserId === currentUser.id) {
       setNotifications(prev => [created, ...prev]);
     }
@@ -137,9 +150,7 @@ const App: React.FC = () => {
   const handleClearAll = async () => {
     if (!currentUser) return;
     const success = await dbClearAll(currentUser.id);
-    if (success) {
-      setNotifications([]);
-    }
+    if (success) setNotifications([]);
   };
 
   const addNewProject = async () => {
@@ -158,14 +169,11 @@ const App: React.FC = () => {
       if (created) {
         setProjects(prev => [created, ...prev]);
         setSelectedProject(created);
-
         addNotification({
           title: 'Novo Projeto Criado',
           message: `O projeto para "${created.clientName}" foi iniciado com sucesso.`,
           type: 'info'
         });
-      } else {
-        alert('Falha ao gravar no Supabase. Verifique sua conexão.');
       }
     } catch (err: any) {
       console.error(err);
@@ -187,7 +195,7 @@ const App: React.FC = () => {
 
   const getFilteredProjects = () => {
     let baseProjects = projects;
-    if (currentUser && currentUser.role === UserRole.INTEGRADOR) {
+    if (currentUser.role === UserRole.INTEGRADOR) {
       baseProjects = projects.filter(p => p.assignedIntegrator === currentUser.name || !p.assignedIntegrator);
     }
 
@@ -197,11 +205,7 @@ const App: React.FC = () => {
       case 'engenharia':
         if (!isEngenhariaRole) return [];
         return projects.filter(p => [
-          ProjectStatus.ANALISE,
-          ProjectStatus.SUBMISSAO,
-          ProjectStatus.INSTALACAO,
-          ProjectStatus.COMISSIONAMENTO,
-          ProjectStatus.AGUARDANDO_ANALISE
+          ProjectStatus.ANALISE, ProjectStatus.SUBMISSAO, ProjectStatus.INSTALACAO, ProjectStatus.COMISSIONAMENTO, ProjectStatus.AGUARDANDO_ANALISE
         ].includes(p.status));
       case 'projects':
       default:
@@ -225,14 +229,10 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen flex ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} relative transition-colors duration-300`}>
       {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-slate-900/50 z-20 md:hidden backdrop-blur-sm"
-          onClick={() => setIsSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-slate-900/50 z-20 md:hidden backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      <aside className={`w-64 bg-slate-900 text-white flex flex-col fixed h-full z-30 shadow-2xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}>
+      <aside className={`w-64 bg-slate-900 text-white flex flex-col fixed h-full z-30 shadow-2xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="p-8">
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
@@ -241,30 +241,16 @@ const App: React.FC = () => {
               </div>
               <span className="text-xl font-bold tracking-tight">SolarFlow<span className="text-amber-400">Pro</span></span>
             </div>
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="md:hidden text-slate-400 hover:text-white"
-            >
+            <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-white">
               <i className="fas fa-times text-xl"></i>
             </button>
           </div>
 
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 px-4">Menu Principal</p>
           <nav className="space-y-1">
-            {isEngenhariaRole && (
-              <SidebarLink
-                active={view === 'dashboard'}
-                onClick={() => handleMenuClick('dashboard')}
-                icon="fa-columns"
-                label="Dashboard"
-              />
-            )}
-            <SidebarLink
-              active={view === 'projects'}
-              onClick={() => handleMenuClick('projects')}
-              icon="fa-layer-group"
-              label="Todos Projetos"
-            />
+            {isEngenhariaRole && <SidebarLink active={view === 'dashboard'} onClick={() => handleMenuClick('dashboard')} icon="fa-columns" label="Dashboard" />}
+            <SidebarLink active={view === 'projects'} onClick={() => handleMenuClick('projects')} icon="fa-layer-group" label="Todos Projetos" />
+
             <div className="pt-4 mb-2 border-t border-slate-800"></div>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 px-4">Operacional</p>
             <SidebarLink
@@ -274,50 +260,24 @@ const App: React.FC = () => {
               label="Vistorias"
               badge={getFilteredProjects().filter(p => p.status === ProjectStatus.VISTORIA).length}
             />
-            {isEngenhariaRole && (
-              <SidebarLink
-                active={view === 'engenharia'}
-                onClick={() => handleMenuClick('engenharia')}
-                icon="fa-pencil-ruler"
-                label="Engenharia"
-                badge={projects.filter(p => p.status === ProjectStatus.ANALISE || p.status === ProjectStatus.AGUARDANDO_ANALISE).length}
-              />
-            )}
+            {isEngenhariaRole && <SidebarLink active={view === 'engenharia'} onClick={() => handleMenuClick('engenharia')} icon="fa-pencil-ruler" label="Engenharia" />}
 
             {isEngenhariaRole && (
               <>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-6 mb-4 px-4">Recursos</p>
-                <SidebarLink
-                  active={view === 'equipments'}
-                  onClick={() => handleMenuClick('equipments')}
-                  icon="fa-tools"
-                  label="Equipamentos"
-                />
+                <SidebarLink active={view === 'equipments'} onClick={() => handleMenuClick('equipments')} icon="fa-tools" label="Equipamentos" />
               </>
             )}
 
-            {isAdmin && (
-              <SidebarLink
-                active={view === 'users'}
-                onClick={() => handleMenuClick('users')}
-                icon="fa-users-cog"
-                label="Usuários"
-              />
-            )}
-
-            <SidebarLink
-              active={view === 'settings'}
-              onClick={() => handleMenuClick('settings')}
-              icon="fa-cog"
-              label="Configurações"
-            />
+            {isAdmin && <SidebarLink active={view === 'users'} onClick={() => handleMenuClick('users')} icon="fa-users-cog" label="Usuários" />}
+            <SidebarLink active={view === 'settings'} onClick={() => handleMenuClick('settings')} icon="fa-cog" label="Configurações" />
           </nav>
         </div>
 
         <div className="mt-auto p-6 border-t border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src={currentUser.avatar} className="w-10 h-10 rounded-full ring-2 ring-slate-700 object-cover" alt="Avatar" />
+              <img src={currentUser.avatar || `https://i.pravatar.cc/150?u=${currentUser.id}`} className="w-10 h-10 rounded-full ring-2 ring-slate-700 object-cover" alt="Avatar" />
               <div className="overflow-hidden">
                 <p className="text-sm font-bold truncate max-w-[100px]">{currentUser.name}</p>
                 <p className="text-xs text-slate-400">{currentUser.role}</p>
@@ -333,103 +293,42 @@ const App: React.FC = () => {
       <main className="flex-1 w-full md:ml-64 p-4 md:p-8 transition-all duration-300">
         <header className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
           <div className="flex items-start gap-4">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="mt-1 md:hidden w-10 h-10 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 shadow-sm"
-            >
+            <button onClick={() => setIsSidebarOpen(true)} className="mt-1 md:hidden w-10 h-10 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 shadow-sm">
               <i className="fas fa-bars text-xl"></i>
             </button>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-                {getViewTitle()}
-              </h1>
-              <p className="text-sm md:text-base text-slate-500 mt-1">
-                Olá, {currentUser.name}.
-              </p>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{getViewTitle()}</h1>
+              <p className="text-sm md:text-base text-slate-500 mt-1">Olá, {currentUser.name}.</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 md:gap-4 relative self-end md:self-auto">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition relative shadow-sm"
-            >
+            <button onClick={() => setShowNotifications(!showNotifications)} className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition relative shadow-sm">
               <i className="fas fa-bell text-lg"></i>
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white animate-bounce">
-                  {unreadCount}
-                </span>
-              )}
+              {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white animate-bounce">{unreadCount}</span>}
             </button>
 
             {showNotifications && (
               <div className="absolute right-0 top-14 z-50 w-full md:w-auto">
-                <NotificationPanel
-                  notifications={notifications}
-                  onClose={() => setShowNotifications(false)}
-                  onMarkAsRead={handleMarkAsRead}
-                  onClearAll={handleClearAll}
-                  onAction={(n) => {
-                    if (n.action === 'accept_survey') {
-                      alert('Vistoria aceita com sucesso!');
-                      handleMarkAsRead(n.id);
-                    }
-                  }}
-                />
+                <NotificationPanel notifications={notifications} onClose={() => setShowNotifications(false)} onMarkAsRead={handleMarkAsRead} onClearAll={handleClearAll} onAction={() => { }} />
               </div>
             )}
 
             {isEngenhariaRole && view !== 'equipments' && view !== 'users' && (
-              <button
-                onClick={addNewProject}
-                className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold shadow-lg shadow-amber-400/20 transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap"
-              >
+              <button onClick={addNewProject} className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold shadow-lg shadow-amber-400/20 transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
                 <i className="fas fa-plus"></i>
                 <span className="hidden sm:inline">Novo Projeto</span>
-                <span className="sm:hidden">Novo</span>
               </button>
             )}
           </div>
         </header>
 
         <div className="animate-in fade-in duration-500 overflow-x-hidden">
-          {view === 'users' && isAdmin ? (
-            <GerenciamentoUsuarios />
-          ) : view === 'equipments' ? (
-            <EquipmentList />
-          ) : (view === 'dashboard' && isEngenhariaRole) ? (
-            <Dashboard projects={projects} />
-          ) : (view === 'engenharia' && isEngenhariaRole) ? (
-            <KanbanBoard projects={projects} onSelectProject={setSelectedProject} />
-          ) : view === 'vistorias' ? (
-            <SurveyList
-              projects={getFilteredProjects()}
-              onSelectProject={setSelectedProject}
-            />
-          ) : view === 'settings' ? (
-            <Settings
-              currentUser={currentUser}
-              onUpdateUser={setCurrentUser}
-              darkMode={darkMode}
-              onToggleDarkMode={setDarkMode}
-            />
-          ) : (
-            <ProjectList
-              projects={getFilteredProjects()}
-              onSelectProject={setSelectedProject}
-            />
-          )}
+          {view === 'users' && isAdmin ? <GerenciamentoUsuarios /> : view === 'equipments' ? <EquipmentList /> : view === 'dashboard' ? <Dashboard projects={projects} /> : view === 'engenharia' ? <KanbanBoard projects={projects} onSelectProject={setSelectedProject} /> : view === 'vistorias' ? <SurveyList projects={getFilteredProjects()} onSelectProject={setSelectedProject} /> : view === 'settings' ? <Settings currentUser={currentUser} onUpdateUser={setCurrentUser} darkMode={darkMode} onToggleDarkMode={setDarkMode} /> : <ProjectList projects={getFilteredProjects()} onSelectProject={setSelectedProject} />}
         </div>
 
         {selectedProject && (
-          <ProjectDetails
-            key={selectedProject.id}
-            project={selectedProject}
-            currentUser={currentUser}
-            onUpdate={handleUpdateProject}
-            onClose={() => setSelectedProject(null)}
-            onNotify={addNotification}
-          />
+          <ProjectDetails key={selectedProject.id} project={selectedProject} currentUser={currentUser} onUpdate={handleUpdateProject} onClose={() => setSelectedProject(null)} onNotify={addNotification} />
         )}
       </main>
     </div>
@@ -437,20 +336,12 @@ const App: React.FC = () => {
 };
 
 const SidebarLink = ({ active, onClick, icon, label, badge }: { active?: boolean; onClick?: () => void; icon: string; label: string; badge?: number }) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-amber-400 text-slate-900 font-bold shadow-md shadow-amber-400/10' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-      }`}
-  >
+  <button onClick={onClick} className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-amber-400 text-slate-900 font-bold shadow-md shadow-amber-400/10' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
     <div className="flex items-center gap-3">
       <i className={`fas ${icon} w-5 text-center`}></i>
       <span className="text-sm">{label}</span>
     </div>
-    {badge !== undefined && badge > 0 && (
-      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${active ? 'bg-slate-900 text-white' : 'bg-slate-800 text-slate-400'}`}>
-        {badge}
-      </span>
-    )}
+    {badge !== undefined && badge > 0 && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${active ? 'bg-slate-900 text-white' : 'bg-slate-800 text-slate-400'}`}>{badge}</span>}
   </button>
 );
 
